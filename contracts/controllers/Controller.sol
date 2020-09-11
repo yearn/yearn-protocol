@@ -17,25 +17,34 @@ contract Controller {
     using SafeMath for uint256;
 
     address public governance;
+    address public strategist;
+
     address public onesplit;
     address public rewards;
-    address public factory;
     mapping(address => address) public vaults;
     mapping(address => address) public strategies;
     mapping(address => mapping(address => address)) public converters;
 
-    uint public split = 5000;
+    mapping(address => mapping(address => bool)) public approvedStrategies;
+
+    uint public split = 500;
     uint public constant max = 10000;
 
     constructor(address _rewards) public {
         governance = msg.sender;
+        strategist = msg.sender;
         onesplit = address(0x50FDA034C0Ce7a8f7EFDAebDA7Aa7cA21CC1267e);
         rewards = _rewards;
     }
 
-    function setFactory(address _factory) public {
+    function setRewards(address _rewards) public {
         require(msg.sender == governance, "!governance");
-        factory = _factory;
+        rewards = _rewards;
+    }
+
+    function setStrategist(address _strategist) public {
+        require(msg.sender == governance, "!governance");
+        strategist = _strategist;
     }
 
     function setSplit(uint _split) public {
@@ -54,17 +63,30 @@ contract Controller {
     }
 
     function setVault(address _token, address _vault) public {
-        require(msg.sender == governance, "!governance");
+        require(msg.sender == strategist || msg.sender == governance, "!strategist");
+        require(vaults[_token] == address(0), "vault");
         vaults[_token] = _vault;
     }
 
-    function setConverter(address _input, address _output, address _converter) public {
+    function approveStrategy(address _token, address _strategy) public {
         require(msg.sender == governance, "!governance");
+        approvedStrategies[_token][_strategy] = true;
+    }
+
+    function revokeStrategy(address _token, address _strategy) public {
+        require(msg.sender == governance, "!governance");
+        approvedStrategies[_token][_strategy] = false;
+    }
+
+    function setConverter(address _input, address _output, address _converter) public {
+        require(msg.sender == strategist || msg.sender == governance, "!strategist");
         converters[_input][_output] = _converter;
     }
 
     function setStrategy(address _token, address _strategy) public {
-        require(msg.sender == governance, "!governance");
+        require(msg.sender == strategist || msg.sender == governance, "!strategist");
+        require(approvedStrategies[_token][_strategy] == true, "!approved");
+
         address _current = strategies[_token];
         if (_current != address(0)) {
            Strategy(_current).withdrawAll();
@@ -91,13 +113,18 @@ contract Controller {
     }
 
     function withdrawAll(address _token) public {
-        require(msg.sender == governance, "!governance");
+        require(msg.sender == strategist || msg.sender == governance, "!strategist");
         Strategy(strategies[_token]).withdrawAll();
     }
 
     function inCaseTokensGetStuck(address _token, uint _amount) public {
-        require(msg.sender == governance, "!governance");
-        IERC20(_token).safeTransfer(governance, _amount);
+        require(msg.sender == strategist || msg.sender == governance, "!governance");
+        IERC20(_token).safeTransfer(msg.sender, _amount);
+    }
+
+    function inCaseStrategyTokenGetStuck(address _strategy, address _token) public {
+        require(msg.sender == strategist || msg.sender == governance, "!governance");
+        Strategy(_strategy).withdraw(_token);
     }
 
     function getExpectedReturn(address _strategy, address _token, uint parts) public view returns (uint expected) {
@@ -108,6 +135,7 @@ contract Controller {
 
     // Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
     function yearn(address _strategy, address _token, uint parts) public {
+        require(msg.sender == strategist || msg.sender == governance, "!governance");
         // This contract should never have value in it, but just incase since this is a public call
         uint _before = IERC20(_token).balanceOf(address(this));
         Strategy(_strategy).withdraw(_token);
