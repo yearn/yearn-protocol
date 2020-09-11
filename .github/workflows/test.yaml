@@ -1,0 +1,67 @@
+name: Test
+
+on: [push]
+
+env:
+  ETHERSCAN_TOKEN:  ${{ secrets.ETHERSCAN_TOKEN }}
+  WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install black
+      run: pip install -r requirements-dev.txt
+
+    - name: Run Black
+      run: black .
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check ETHERSCAN_TOKEN
+      run: |
+        if [ -z "$ETHERSCAN_TOKEN" ] ; then
+          echo "Missing ENV variable ETHERSCAN_TOKEN"
+          exit 1
+        fi
+    - name: Check WEB3_INFURA_PROJECT_ID
+      run: |
+        if [ -z "$WEB3_INFURA_PROJECT_ID" ] ; then
+          echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
+          exit 1
+        fi
+    - uses: actions/checkout@v1
+
+    - name: Cache Compiler Installations
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.solcx
+          ~/.vvm
+        key: compiler-cache
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+
+    - name: Install Ganache
+      run: npm install -g ganache-cli@6.10.1
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install Brownie
+      run: pip install -r requirements-dev.txt
+
+    - name: Run Tests
+      run: brownie test -s
