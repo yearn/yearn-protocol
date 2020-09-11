@@ -65,11 +65,18 @@ contract yVault is ERC20, ERC20Detailed {
         IController(controller).earn(address(token), _bal);
     }
 
-    function deposit(uint _amount) external {
+    function depositAll() external {
+        deposit(token.balanceOf(msg.sender));
+    }
+
+    function deposit(uint _amount) public {
         uint _pool = balance();
+        uint _before = token.balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), _amount);
+        uint _after = token.balanceOf(address(this));
+        _amount = _after.sub(_before); // Additional check for deflationary tokens
         uint shares = 0;
-        if (_pool == 0) {
+        if (totalSupply() == 0) {
             shares = _amount;
         } else {
             shares = (_amount.mul(totalSupply())).div(_pool);
@@ -77,8 +84,12 @@ contract yVault is ERC20, ERC20Detailed {
         _mint(msg.sender, shares);
     }
 
+    function withdrawAll() external {
+        withdraw(balanceOf(msg.sender));
+    }
+
     // No rebalance implementation for lower fees and faster swaps
-    function withdraw(uint _shares) external {
+    function withdraw(uint _shares) public {
         uint r = (balance().mul(_shares)).div(totalSupply());
         _burn(msg.sender, _shares);
 
