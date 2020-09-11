@@ -5,4 +5,6 @@ interface IController {
     function balanceOf(address) external view returns (uint);
     function earn(address, uint) external;
     function want(address) external view returns (address);
+    function rewards() external view returns (address);
+    function vaults(address) external view returns (address);
 }
