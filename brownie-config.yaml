@@ -4,6 +4,11 @@ networks:
   mainnet-fork:
     cmd_settings:
       unlock:
+        - 0xD551234Ae421e3BCBA99A0Da6d736074f22192FF  # Binance 2
+        - 0x564286362092D8e7936f0549571a803B203aAceD  # Binance 3
+        - 0x0681d8Db095565FE8A346fA0277bFfdE9C0eDBBF  # Binance 4
+        - 0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8  # Binance 7
+        - 0xF977814e90dA44bFA03b6295A0616a897441aceC  # Binance 8
         - 0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE  # Binance
 
 # automatically fetch contract sources from Etherscan
