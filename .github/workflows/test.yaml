@@ -64,4 +64,4 @@ jobs:
       run: pip install -r requirements-dev.txt
 
     - name: Run Tests
-      run: brownie test -s
+      run: brownie test -s --coverage
