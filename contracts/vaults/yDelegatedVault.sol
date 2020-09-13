@@ -102,6 +102,11 @@ contract yDelegatedVault is ERC20, ERC20Detailed {
     function balance() public view returns (uint) {
         return token.balanceOf(address(this)).sub(insurance);
     }
+
+    function setGovernance(address _governance) external {
+        require(msg.sender == governance, "!governance");
+        governance = _governance;
+    }
     
     function setController(address _controller) external {
         require(msg.sender == governance, "!governance");
