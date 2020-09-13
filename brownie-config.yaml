@@ -1,6 +1,10 @@
 # use Ganache's forked mainnet mode as the default network
 networks:
   default: mainnet-fork
+  mainnet-fork:
+    cmd_settings:
+      unlock:
+        - 0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE  # Binance
 
 # automatically fetch contract sources from Etherscan
 autofetch_sources: True
