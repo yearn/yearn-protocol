@@ -1,5 +1,27 @@
-def test_deposit_shares(minnow, token, vault):
+def test_deposit_withdraw_shares(minnow, token, vault):
     balance = token.balanceOf(minnow)
     token.approve(vault, balance, {"from": minnow})
-    vault.deposit(balance, {"from": minnow})
+
+    # Deposit 1/3 of entire balance
+    vault.deposit(balance // 3, {"from": minnow})  # 1/3
+    # Shares show appropiate balance
+    assert (
+        vault.balanceOf(minnow)
+        == (balance // 3) * vault.totalSupply() // vault.balance()
+    )
+    # Deposit entire balance
+    vault.depositAll({"from": minnow})  # 2/3
+    # Shares show appropiate balance
     assert vault.balanceOf(minnow) == balance * vault.totalSupply() // vault.balance()
+
+    # Withdraw 1/3 of entire balance
+    vault.withdraw(vault.balanceOf(minnow) // 3, {"from": minnow})  # 1/3
+    # Shares show appropiate balance
+    assert (
+        vault.balanceOf(minnow)
+        == (balance // 3) * vault.totalSupply() // vault.balance()
+    )
+    # Withdraw entire balance
+    vault.withdrawAll({"from": minnow})  # 2/3
+    # Shares show appropiate balance
+    assert vault.balanceOf(minnow) == 0
