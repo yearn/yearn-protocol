@@ -10,7 +10,7 @@ import "../../interfaces/yearn/IStrategy.sol";
 import "../../interfaces/yearn/IVault.sol";
 import "../../interfaces/yearn/IWrappedVault.sol";
 
-contract YRegistryV1 {
+contract YRegistry {
   using Address for address;
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -32,15 +32,9 @@ contract YRegistryV1 {
     owner = msg.sender;
     governance = msg.sender;
   }
-  
-  function isYRegistry() external pure returns (bool) {
-    return true;
-  }
-  function yRegistryVersion() external pure returns (uint) {
-    return 1;
-  }
+
   function getName() external pure returns (string memory) {
-    return "YRegistryV1";
+    return "YRegistry";
   }
 
   function addVault(address _vault) public onlyGovernance {
