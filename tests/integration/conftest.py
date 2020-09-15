@@ -133,6 +133,8 @@ def andre(accounts, weth, uniswap, Token, Contract):
         # NOTE: Only wrap 1/4 of holdings as WETH (save some for Uniswap)
         if token.address == weth.address:
             weth.deposit({"from": andre, "value": andre.balance() // 4})
+            target_share = 100 * token.balanceOf(andre) / token.totalSupply()
+            print(f"Andre has {target_share:0.2f}% of {token.symbol()}")
             continue
 
         # Option 1: Andre has enough tokens, we're done
@@ -188,6 +190,10 @@ def andre(accounts, weth, uniswap, Token, Contract):
                             c, underlying.balanceOf(andre), {"from": andre}
                         )
                         c.deposit(underlying.balanceOf(andre) // 3, {"from": andre})
+                    target_share = (
+                        100 * underlying.balanceOf(andre) / underlying.totalSupply()
+                    )
+                    print(f"Andre has {target_share:0.2f}% of {underlying.symbol()}")
 
                 if c.balanceOf(andre) > 0:
                     # Deposit enough so that it's less than 2% of the pool
@@ -203,6 +209,8 @@ def andre(accounts, weth, uniswap, Token, Contract):
 
             assert any(balances), "Andre doesn't have any of the underlying tokens!"
             curve.add_liquidity(balances, 0, {"from": andre})
+            target_share = 100 * token.balanceOf(andre) / token.totalSupply()
+            print(f"Andre has {target_share:0.2f}% of {token.symbol()}")
             continue  # Now we have LP tokens!
 
         assert token.balanceOf(andre) / token.totalSupply() >= 0.01  # 1% of supply
