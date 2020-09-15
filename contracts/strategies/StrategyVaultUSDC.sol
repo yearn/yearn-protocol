@@ -18,8 +18,8 @@ contract StrategyVaultUSDC {
     using Address for address;
     using SafeMath for uint256;
 
-    address constant public want = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    address constant public vault = address(0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e);
+    address public constant want = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    address public constant vault = address(0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e);
 
     address public constant aave = address(0x24a42fD28C976A61Df5D00D0599C34c4f90748c8);
 
@@ -32,7 +32,7 @@ contract StrategyVaultUSDC {
     }
 
     function deposit() external {
-        uint _balance = IERC20(want).balanceOf(address(this));
+        uint256 _balance = IERC20(want).balanceOf(address(this));
         if (_balance > 0) {
             IERC20(want).safeApprove(address(vault), 0);
             IERC20(want).safeApprove(address(vault), _balance);
@@ -48,19 +48,25 @@ contract StrategyVaultUSDC {
         return "StrategyVaultUSDC";
     }
 
-    function debt() external view returns (uint) {
-        (,uint currentBorrowBalance,,,,,,,,) = Aave(getAave()).getUserReserveData(want, IController(controller).vaults(address(this)));
+    function debt() external view returns (uint256) {
+        (, uint256 currentBorrowBalance, , , , , , , , ) = Aave(getAave()).getUserReserveData(
+            want,
+            IController(controller).vaults(address(this))
+        );
         return currentBorrowBalance;
     }
 
-    function have() public view returns (uint) {
-        uint _have = balanceOf();
+    function have() public view returns (uint256) {
+        uint256 _have = balanceOf();
         return _have;
     }
 
-    function skimmable() public view returns (uint) {
-        (,uint currentBorrowBalance,,,,,,,,) = Aave(getAave()).getUserReserveData(want, IController(controller).vaults(address(this)));
-        uint _have = have();
+    function skimmable() public view returns (uint256) {
+        (, uint256 currentBorrowBalance, , , , , , , , ) = Aave(getAave()).getUserReserveData(
+            want,
+            IController(controller).vaults(address(this))
+        );
+        uint256 _have = have();
         if (_have > currentBorrowBalance) {
             return _have.sub(currentBorrowBalance);
         } else {
@@ -69,8 +75,8 @@ contract StrategyVaultUSDC {
     }
 
     function skim() external {
-        uint _balance = IERC20(want).balanceOf(address(this));
-        uint _amount = skimmable();
+        uint256 _balance = IERC20(want).balanceOf(address(this));
+        uint256 _amount = skimmable();
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount.sub(_balance));
             _amount = _amount.add(_balance);
@@ -79,7 +85,7 @@ contract StrategyVaultUSDC {
     }
 
     // Controller only function for creating additional rewards from dust
-    function withdraw(IERC20 _asset) external returns (uint balance) {
+    function withdraw(IERC20 _asset) external returns (uint256 balance) {
         require(msg.sender == controller, "!controller");
         require(address(_asset) != address(want), "!want");
         require(address(_asset) != address(vault), "!vault");
@@ -88,9 +94,9 @@ contract StrategyVaultUSDC {
     }
 
     // Withdraw partial funds, normally used with a vault withdrawal
-    function withdraw(uint _amount) external {
+    function withdraw(uint256 _amount) external {
         require(msg.sender == controller, "!controller");
-        uint _balance = IERC20(want).balanceOf(address(this));
+        uint256 _balance = IERC20(want).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount.sub(_balance));
             _amount = _amount.add(_balance);
@@ -101,7 +107,7 @@ contract StrategyVaultUSDC {
     }
 
     // Withdraw all funds, normally used when migrating strategies
-    function withdrawAll() external returns (uint balance) {
+    function withdrawAll() external returns (uint256 balance) {
         require(msg.sender == controller, "!controller");
         _withdrawAll();
         balance = IERC20(want).balanceOf(address(this));
@@ -114,17 +120,16 @@ contract StrategyVaultUSDC {
         Vault(vault).withdraw(IERC20(vault).balanceOf(address(this)));
     }
 
-    function _withdrawSome(uint256 _amount) internal returns (uint) {
-        uint _redeem = IERC20(vault).balanceOf(address(this)).mul(_amount).div(balanceSavingsInToken());
-        uint _before = IERC20(want).balanceOf(address(this));
+    function _withdrawSome(uint256 _amount) internal returns (uint256) {
+        uint256 _redeem = IERC20(vault).balanceOf(address(this)).mul(_amount).div(balanceSavingsInToken());
+        uint256 _before = IERC20(want).balanceOf(address(this));
         Vault(vault).withdraw(_redeem);
-        uint _after = IERC20(want).balanceOf(address(this));
+        uint256 _after = IERC20(want).balanceOf(address(this));
         return _after.sub(_before);
     }
 
-    function balanceOf() public view returns (uint) {
-        return IERC20(want).balanceOf(address(this))
-                .add(balanceSavingsInToken());
+    function balanceOf() public view returns (uint256) {
+        return IERC20(want).balanceOf(address(this)).add(balanceSavingsInToken());
     }
 
     function balanceSavingsInToken() public view returns (uint256) {

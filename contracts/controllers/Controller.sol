@@ -27,8 +27,8 @@ contract Controller {
 
     mapping(address => mapping(address => bool)) public approvedStrategies;
 
-    uint public split = 500;
-    uint public constant max = 10000;
+    uint256 public split = 500;
+    uint256 public constant max = 10000;
 
     constructor(address _rewards) public {
         governance = msg.sender;
@@ -47,7 +47,7 @@ contract Controller {
         strategist = _strategist;
     }
 
-    function setSplit(uint _split) public {
+    function setSplit(uint256 _split) public {
         require(msg.sender == governance, "!governance");
         split = _split;
     }
@@ -78,7 +78,11 @@ contract Controller {
         approvedStrategies[_token][_strategy] = false;
     }
 
-    function setConverter(address _input, address _output, address _converter) public {
+    function setConverter(
+        address _input,
+        address _output,
+        address _converter
+    ) public {
         require(msg.sender == strategist || msg.sender == governance, "!strategist");
         converters[_input][_output] = _converter;
     }
@@ -89,12 +93,12 @@ contract Controller {
 
         address _current = strategies[_token];
         if (_current != address(0)) {
-           Strategy(_current).withdrawAll();
+            Strategy(_current).withdrawAll();
         }
         strategies[_token] = _strategy;
     }
 
-    function earn(address _token, uint _amount) public {
+    function earn(address _token, uint256 _amount) public {
         address _strategy = strategies[_token];
         address _want = Strategy(_strategy).want();
         if (_want != _token) {
@@ -108,7 +112,7 @@ contract Controller {
         Strategy(_strategy).deposit();
     }
 
-    function balanceOf(address _token) external view returns (uint) {
+    function balanceOf(address _token) external view returns (uint256) {
         return Strategy(strategies[_token]).balanceOf();
     }
 
@@ -117,7 +121,7 @@ contract Controller {
         Strategy(strategies[_token]).withdrawAll();
     }
 
-    function inCaseTokensGetStuck(address _token, uint _amount) public {
+    function inCaseTokensGetStuck(address _token, uint256 _amount) public {
         require(msg.sender == strategist || msg.sender == governance, "!governance");
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
@@ -127,24 +131,32 @@ contract Controller {
         Strategy(_strategy).withdraw(_token);
     }
 
-    function getExpectedReturn(address _strategy, address _token, uint parts) public view returns (uint expected) {
-        uint _balance = IERC20(_token).balanceOf(_strategy);
+    function getExpectedReturn(
+        address _strategy,
+        address _token,
+        uint256 parts
+    ) public view returns (uint256 expected) {
+        uint256 _balance = IERC20(_token).balanceOf(_strategy);
         address _want = Strategy(_strategy).want();
-        (expected,) = OneSplitAudit(onesplit).getExpectedReturn(_token, _want, _balance, parts, 0);
+        (expected, ) = OneSplitAudit(onesplit).getExpectedReturn(_token, _want, _balance, parts, 0);
     }
 
     // Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
-    function yearn(address _strategy, address _token, uint parts) public {
+    function yearn(
+        address _strategy,
+        address _token,
+        uint256 parts
+    ) public {
         require(msg.sender == strategist || msg.sender == governance, "!governance");
         // This contract should never have value in it, but just incase since this is a public call
-        uint _before = IERC20(_token).balanceOf(address(this));
+        uint256 _before = IERC20(_token).balanceOf(address(this));
         Strategy(_strategy).withdraw(_token);
-        uint _after =  IERC20(_token).balanceOf(address(this));
+        uint256 _after = IERC20(_token).balanceOf(address(this));
         if (_after > _before) {
-            uint _amount = _after.sub(_before);
+            uint256 _amount = _after.sub(_before);
             address _want = Strategy(_strategy).want();
-            uint[] memory _distribution;
-            uint _expected;
+            uint256[] memory _distribution;
+            uint256 _expected;
             _before = IERC20(_want).balanceOf(address(this));
             IERC20(_token).safeApprove(onesplit, 0);
             IERC20(_token).safeApprove(onesplit, _amount);
@@ -153,14 +165,14 @@ contract Controller {
             _after = IERC20(_want).balanceOf(address(this));
             if (_after > _before) {
                 _amount = _after.sub(_before);
-                uint _reward = _amount.mul(split).div(max);
+                uint256 _reward = _amount.mul(split).div(max);
                 earn(_want, _amount.sub(_reward));
                 IERC20(_want).safeTransfer(rewards, _reward);
             }
         }
     }
 
-    function withdraw(address _token, uint _amount) public {
+    function withdraw(address _token, uint256 _amount) public {
         require(msg.sender == vaults[_token], "!vault");
         Strategy(strategies[_token]).withdraw(_amount);
     }
