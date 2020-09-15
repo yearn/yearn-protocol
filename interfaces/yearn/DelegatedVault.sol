@@ -1,7 +1,11 @@
 pragma solidity ^0.5.16;
 
-import "./Vault.sol";
-
-interface DelegatedVault is Vault {
+interface DelegatedVault {
+    function token() external view returns (address);
+    function deposit(uint) external;
+    function depositAll() external;
+    function withdraw(uint) external;
+    function withdrawAll() external;
+    function getPricePerFullShare() external view returns (uint);
     function claimInsurance() external;
 }

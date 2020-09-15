@@ -124,7 +124,7 @@ contract DelegatedController {
         uint _after =  IERC20(_have).balanceOf(address(this));
         if (_after > _before) {
             uint _amount = _after.sub(_before);
-            address _want = Vault(vaults[_strategy]).token();
+            address _want = DelegatedVault(vaults[_strategy]).token();
             uint[] memory _distribution;
             uint _expected;
             _before = IERC20(_want).balanceOf(address(this));
