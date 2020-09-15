@@ -7,6 +7,7 @@
     },
     "scripts": {
         "lint": "prettier --list-different **/*.sol **/*.json",
+        "lint:check": "prettier --check **/*.sol **/*.json",
         "lint:fix": "prettier --write **/*.sol **/*.json"
     }
 }
