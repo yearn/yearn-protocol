@@ -38,3 +38,28 @@ def test_deposit_withdraw_shares(minnow, token, vault):
     vault.withdrawAll({"from": minnow})  # 2/3
     # Shares show appropiate balance
     assert vault.balanceOf(minnow) == 0
+
+
+def test_earn(chain, whale, token, vault, strategy, strategist):
+    # YOLO all in like a real whale
+    starting_balance = token.balanceOf(whale)
+    token.approve(vault, starting_balance, {"from": whale})
+    vault.depositAll({"from": whale})
+
+    if hasattr(strategy, "harvest"):
+        update_strategy = lambda: strategy.harvest({"from": strategist})
+    elif hasattr(strategy, "skim"):
+        update_strategy = lambda: strategy.skim({"from": strategist})
+    else:
+        raise AssertionError(f"Strategy {strategy.getName()} does not have an action!")
+
+    # Do some strategy action...
+    update_strategy()
+    chain.mine(200)  # mine 200 blocks
+    chain.sleep(200 * 15)  # sleep 200 blocks worth of time
+    # Do it again...
+    update_strategy()
+
+    # Shouldn't lose any money since no one else is interacting with the chain
+    vault.withdrawAll({"from": whale})
+    assert token.balanceOf(whale) - starting_balance >= 0

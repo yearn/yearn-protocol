@@ -42,13 +42,21 @@ def rewards(accounts):
 
 
 @pytest.fixture
+def strategist(accounts):
+    # This is normally an EOA, with specialized access to strategies
+    yield accounts[7]
+
+
+@pytest.fixture
 def controller(rewards, gov, Controller):
     yield gov.deploy(Controller, rewards)
 
 
 @pytest.fixture(params=STRATEGIES, ids=[s._name for s in STRATEGIES])
-def strategy(gov, controller, request):
-    yield gov.deploy(request.param, controller)
+def strategy(gov, controller, request, strategist):
+    strategy = strategist.deploy(request.param, controller)
+    strategy.setGovernance(gov, {"from": strategist})
+    yield strategy
 
 
 @pytest.fixture
