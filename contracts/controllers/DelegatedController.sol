@@ -10,7 +10,7 @@ import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 import "../../interfaces/yearn/Strategy.sol";
 import "../../interfaces/yearn/Converter.sol";
 import "../../interfaces/yearn/OneSplitAudit.sol";
-import "../../interfaces/yearn/Vault.sol";
+import "../../interfaces/yearn/DelegatedVault.sol";
 
 contract DelegatedController {
     using SafeERC20 for IERC20;
@@ -112,7 +112,7 @@ contract DelegatedController {
 
     function claimInsurance(address _vault) external {
         require(msg.sender == governance, "!governance");
-        Vault(_vault).claimInsurance();
+        DelegatedVault(_vault).claimInsurance();
     }
 
     // Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
