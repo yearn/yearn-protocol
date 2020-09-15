@@ -46,7 +46,7 @@ def controller(rewards, gov, Controller):
     yield gov.deploy(Controller, rewards)
 
 
-@pytest.fixture(params=STRATEGIES)
+@pytest.fixture(params=STRATEGIES, ids=[s._name for s in STRATEGIES])
 def strategy(gov, controller, request):
     yield gov.deploy(request.param, controller)
 
