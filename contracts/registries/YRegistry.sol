@@ -1,4 +1,5 @@
-//SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.6.8;
 
 import "@openzeppelinV3/contracts/math/SafeMath.sol";
@@ -177,6 +178,29 @@ contract YRegistry {
       isWrapped,
       isDelegated
     );
+  }
+
+  function getVaultsInfo() external view returns (
+    address[] memory controllerArray,
+    address[] memory tokenArray,
+    address[] memory strategyArray,
+    bool[] memory isWrappedArray,
+    bool[] memory isDelegatedArray
+  ) {
+    controllerArray = new address[](vaults.length());
+    tokenArray = new address[](vaults.length());
+    strategyArray = new address[](vaults.length());
+    isWrappedArray = new bool[](vaults.length());
+    isDelegatedArray = new bool[](vaults.length());
+
+    for (uint i = 0; i < vaults.length(); i++) {
+      (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = getVaultData(vaults.at(i));
+      controllerArray[i] = _controller;
+      tokenArray[i] = _token;
+      strategyArray[i] = _strategy;
+      isWrappedArray[i] = _isWrapped;
+      isDelegatedArray[i] = _isDelegated;
+    }
   }
 
  // Governance setters
