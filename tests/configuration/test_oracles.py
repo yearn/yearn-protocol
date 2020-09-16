@@ -26,19 +26,21 @@ def test_whitelist(gov, oracle):
     assert not oracle.authorized(gov)
 
 
-def test_read(a, oracle):
-    price, osm = oracle.read()
+@pytest.mark.parametrize('func', ['read', 'foresight'])
+def test_read(a, oracle, func):
+    price, osm = getattr(oracle, func)()
     assert price > 0
     assert not osm
 
 
 @pytest.mark.xfail
-def test_read_bud(a, interface, OSMedianizer):
+@pytest.mark.parametrize('func', ['read', 'foresight'])
+def test_read_bud(a, interface, OSMedianizer, func):
     oracle = OSMedianizer.at('0x82c93333e4E295AA17a05B15092159597e823e8a')
     osm = interface.OracleSecurityModule(oracle.OSM())
     assert osm.bud(oracle), 'kiss first'
     reader = a[0]  # TODO: someone authorized
     assert oracle.authorized(reader)
-    price, osm = oracle.read({'from': reader})
+    price, osm = getattr(oracle, func)({'from': reader})
     assert price > 0
     assert osm
