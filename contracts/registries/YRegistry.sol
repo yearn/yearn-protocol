@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.5.17;
+pragma solidity ^0.6.8;
 
 import "@openzeppelinV3/contracts/math/SafeMath.sol";
 import "@openzeppelinV3/contracts/utils/Address.sol";
@@ -28,7 +28,7 @@ contract YRegistry {
 
   constructor(address _governance) public {
     require(_governance != address(0), "Missing Governance");
-    governance = msg.sender;
+    governance = _governance;
   }
 
   function getName() external pure returns (string memory) {
