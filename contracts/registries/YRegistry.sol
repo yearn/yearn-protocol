@@ -16,11 +16,8 @@ contract YRegistry {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
-  address public governance;
-  address public owner;
-  
+  address public governance;  
   address public pendingGovernance;
-  address public pendingOwner;
 
   EnumerableSet.AddressSet private vaults;
   EnumerableSet.AddressSet private controllers;
@@ -29,8 +26,8 @@ contract YRegistry {
 
   mapping(address => bool) public isDelegatedVault;
 
-  constructor() public {
-    owner = msg.sender;
+  constructor(address _governance) public {
+    require(_governance != address(0), "Missing Governance");
     governance = msg.sender;
   }
 
@@ -136,9 +133,7 @@ contract YRegistry {
     if (isWrapped) {
       address underlying = IVault(vault).underlying();
       require(underlying == token, "WrappedVault token address does not match"); // Might happen?
-    } else if (isDelegated) {
-
-    } else {
+    } else if (!isDelegated) {
       address strategyToken = IStrategy(strategy).want();
       require(token == strategyToken, "Strategy token address does not match"); // Might happen?
     }
@@ -180,29 +175,6 @@ contract YRegistry {
     );
   }
 
-  function getVaultsInfo() external view returns (
-    address[] memory controllerArray,
-    address[] memory tokenArray,
-    address[] memory strategyArray,
-    bool[] memory isWrappedArray,
-    bool[] memory isDelegatedArray
-  ) {
-    controllerArray = new address[](vaults.length());
-    tokenArray = new address[](vaults.length());
-    strategyArray = new address[](vaults.length());
-    isWrappedArray = new bool[](vaults.length());
-    isDelegatedArray = new bool[](vaults.length());
-
-    for (uint i = 0; i < vaults.length(); i++) {
-      (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = getVaultData(vaults.at(i));
-      controllerArray[i] = _controller;
-      tokenArray[i] = _token;
-      strategyArray[i] = _strategy;
-      isWrappedArray[i] = _isWrapped;
-      isDelegatedArray[i] = _isDelegated;
-    }
-  }
-
  // Governance setters
   function setPendingGovernance(address _pendingGovernance) external onlyGovernance {
     pendingGovernance = _pendingGovernance;
@@ -210,22 +182,7 @@ contract YRegistry {
   function acceptGovernance() external onlyPendingGovernance {
     governance = msg.sender;
   }
- // Owner setters
-  function setPendingOwner(address _pendingOwner) external onlyOwner {
-    pendingOwner = _pendingOwner;
-  }
-  function acceptOwner() external onlyPendingOwner {
-    owner = msg.sender;
-  }
 
-  modifier onlyOwner {
-    require(msg.sender == owner, "Only owner can call this function.");
-    _;
-  }
-  modifier onlyPendingOwner {
-    require(msg.sender == pendingOwner, "Only pendingOwner can call this function.");
-    _;
-  }
   modifier onlyGovernance {
     require(msg.sender == governance, "Only governance can call this function.");
     _;
