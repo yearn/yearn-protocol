@@ -1,5 +1,4 @@
 import pytest
-from brownie import OSMedianizer
 
 
 @pytest.fixture
