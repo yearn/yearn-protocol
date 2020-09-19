@@ -6,6 +6,11 @@ from vyper.interfaces import ERC20
 
 implements: ERC20
 
+interface DetailedERC20:
+    def name() -> String[42]: view
+    def symbol() -> String[20]: view
+    def decimals() -> uint256: view
+
 event Transfer:
     sender: indexed(address)
     receiver: indexed(address)
@@ -31,8 +36,8 @@ guardian: public(address)
 
 struct StrategyParams:
     blockAdded: uint256
-    starting: uint256
-    maximum: uint256
+    starting: decimal
+    maximum: decimal
     blockGain: decimal
     borrowed: uint256
     returns: uint256
@@ -43,10 +48,11 @@ strategies: public(HashMap[address, StrategyParams])
 
 @external
 def __init__(_token: address, _governance: address):
+    # TODO: Non-detailed Configuration?
     self.token = ERC20(_token)
-    self.name = concat("yearn", ERC20(_token).name())
-    self.symbol = concat("yearn", ERC20(_token).symbol())
-    self.decimals = ERC20(_token).decimals()
+    self.name = concat("yearn", DetailedERC20(_token).name())
+    self.symbol = concat("y", DetailedERC20(_token).symbol())
+    self.decimals = DetailedERC20(_token).decimals()
     self.governance = _governance
     self.guardian = msg.sender
 
@@ -106,7 +112,7 @@ def deposit(_amount: uint256):
         shares = _amount
     self.totalSupply += shares
     self.balanceOf[msg.sender] += shares
-    log Transfer(ZERO_ADDRESS, _to, shares)
+    log Transfer(ZERO_ADDRESS, msg.sender, shares)
 
 
 @view
@@ -130,8 +136,8 @@ def withdraw(_shares: uint256):
 
     # Burn shares
     self.totalSupply -= value
-    self.balanceOf[_to] -= value
-    log Transfer(_to, ZERO_ADDRESS, value)
+    self.balanceOf[msg.sender] -= value
+    log Transfer(msg.sender, ZERO_ADDRESS, value)
 
     reserve: uint256 = self.token.balanceOf(self)
     if value > reserve:
@@ -152,6 +158,8 @@ def withdraw(_shares: uint256):
 
     # Withdraw balance (NOTE: fails currently if value > reserve)
     self.token.transfer(msg.sender, value)
+
+
 @view
 @external
 def price() -> uint256:
@@ -166,15 +174,17 @@ def addStrategy(
     _fadeIn: uint256,  # blocks
 ):
     assert msg.sender == self.governance
+    starting: decimal = convert(_startingCapital, decimal)
+    maximum: decimal = convert(_maximumCapital, decimal)
     self.strategies[_strategy] = StrategyParams({
         blockAdded: block.number,
-        starting: _startingCapital,
-        maximum: _maximumCapital,
-        blockGain: convert(_maximumCapital - _startingCapital, decimal)) / convert(_fadeIn, decimal),
+        starting: starting,
+        maximum: maximum,
+        blockGain: (maximum - starting) / convert(_fadeIn, decimal),
         borrowed: _startingCapital,
         returns: 0,
     })
-    self.transfer(_strategy, _startingCapital)
+    self.token.transfer(_strategy, _startingCapital)
 
 
 @view
@@ -187,10 +197,10 @@ def _available(_strategy: address) -> uint256:
     # Reserves available
     available: decimal = convert(self.token.balanceOf(self), decimal)
     # Adjust by % borrowed
-    available *= convert(params.maximum - params.borrowed, decimal) / convert(params.borrowed), decimal)
+    available *= (params.maximum - convert(params.borrowed, decimal)) / convert(params.borrowed, decimal)
     # Adjust by initial rate limiting algorithm
     available *= min(
-        params.starting + params.blockGain * convert((block.number - params.dateAdded), decimal),
+        params.starting + params.blockGain * convert((block.number - params.blockAdded), decimal),
         params.maximum,
     )
     return convert(available, uint256)
@@ -198,11 +208,10 @@ def _available(_strategy: address) -> uint256:
 
 @view
 @external
-def available(_strategy: address) -> uint256:
+def availableForStrategy(_strategy: address) -> uint256:
     return self._available(_strategy)
 
 
-@view
 @external
 def sync(_return: uint256) -> uint256:
     # NOTE: For approved strategies, this is the most efficient behavior.
