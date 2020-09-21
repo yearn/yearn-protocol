@@ -2,8 +2,8 @@ import pytest
 
 
 @pytest.fixture
-def oracle(a, OSMedianizer):
-    yield a[0].deploy(OSMedianizer)
+def oracle(a, BTCOSMedianizer):
+    yield a[0].deploy(BTCOSMedianizer)
 
 
 def test_hardcoded_config(a, oracle):
