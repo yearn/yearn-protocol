@@ -14,7 +14,7 @@ interface OracleSecurityModule {
     function bud(address) external view returns (uint256);
 }
 
-contract OSMedianizer {
+contract BTCOSMedianizer {
     using SafeMath for uint256;
 
     mapping(address => bool) public authorized;
