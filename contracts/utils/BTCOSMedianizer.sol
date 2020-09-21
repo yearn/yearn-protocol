@@ -2,16 +2,10 @@ pragma solidity ^0.5.17;
 
 import "@openzeppelinV2/contracts/math/SafeMath.sol";
 
+import "../../interfaces/maker/OracleSecurityModule.sol";
+
 interface UniswapAnchoredView {
     function price(string calldata) external view returns (uint256);
-}
-
-interface OracleSecurityModule {
-    function peek() external view returns (bytes32, bool);
-
-    function peep() external view returns (bytes32, bool);
-
-    function bud(address) external view returns (uint256);
 }
 
 contract BTCOSMedianizer {
