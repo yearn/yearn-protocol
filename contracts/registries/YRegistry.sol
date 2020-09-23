@@ -2,9 +2,9 @@
 
 pragma solidity ^0.5.17;
 
-import "@openzeppelinV3/contracts/math/SafeMath.sol";
-import "@openzeppelinV3/contracts/utils/Address.sol";
-import "@openzeppelinV3/contracts/utils/EnumerableSet.sol";
+import "@openzeppelinV2/contracts/math/SafeMath.sol";
+import "@openzeppelinV2/contracts/utils/Address.sol";
+import "@openzeppelinV2/contracts/utils/EnumerableSet.sol";
 
 import "../../interfaces/yearn/IController.sol";
 import "../../interfaces/yearn/IStrategy.sol";
@@ -148,7 +148,7 @@ contract YRegistry {
 
     // Vaults getters
     function getVault(uint256 index) external view returns (address vault) {
-        return vaults.at(index);
+        return vaults.get(index);
     }
 
     function getVaultsLength() external view returns (uint256) {
@@ -158,7 +158,7 @@ contract YRegistry {
     function getVaults() external view returns (address[] memory) {
         address[] memory vaultsArray = new address[](vaults.length());
         for (uint256 i = 0; i < vaults.length(); i++) {
-            vaultsArray[i] = vaults.at(i);
+            vaultsArray[i] = vaults.get(i);
         }
         return vaultsArray;
     }
