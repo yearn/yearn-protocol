@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.5.16;
 
 interface IController {
@@ -12,4 +14,6 @@ interface IController {
     function rewards() external view returns (address);
 
     function vaults(address) external view returns (address);
+
+    function strategies(address) external view returns (address);
 }
