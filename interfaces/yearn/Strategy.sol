@@ -17,7 +17,7 @@ interface Strategy {
     // Controller | Vault role - withdraw should always return to Vault
     function withdrawAll() external returns (uint256);
 
-    function balanceOf() external view returns (uint);
+    function balanceOf() external view returns (uint256);
 
     function skim() external;
 }
