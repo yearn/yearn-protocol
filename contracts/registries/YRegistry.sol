@@ -178,6 +178,33 @@ contract YRegistry {
         return (controller, token, strategy, isWrapped, isDelegated);
     }
 
+    function getVaultsInfo()
+        external
+        view
+        returns (
+            address[] memory controllerArray,
+            address[] memory tokenArray,
+            address[] memory strategyArray,
+            bool[] memory isWrappedArray,
+            bool[] memory isDelegatedArray
+        )
+    {
+        controllerArray = new address[](vaults.length());
+        tokenArray = new address[](vaults.length());
+        strategyArray = new address[](vaults.length());
+        isWrappedArray = new bool[](vaults.length());
+        isDelegatedArray = new bool[](vaults.length());
+
+        for (uint256 i = 0; i < vaults.length(); i++) {
+            (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = getVaultData(vaults.get(i));
+            controllerArray[i] = _controller;
+            tokenArray[i] = _token;
+            strategyArray[i] = _strategy;
+            isWrappedArray[i] = _isWrapped;
+            isDelegatedArray[i] = _isDelegated;
+        }
+    }
+
     // Governance setters
     function setPendingGovernance(address _pendingGovernance) external onlyGovernance {
         pendingGovernance = _pendingGovernance;
