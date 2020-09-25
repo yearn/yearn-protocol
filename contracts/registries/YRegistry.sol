@@ -196,7 +196,7 @@ contract YRegistry {
         isDelegatedArray = new bool[](vaults.length());
 
         for (uint256 i = 0; i < vaults.length(); i++) {
-            (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = getVaultData(vaults.at(i));
+            (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = getVaultData(vaults.get(i));
             controllerArray[i] = _controller;
             tokenArray[i] = _token;
             strategyArray[i] = _strategy;
