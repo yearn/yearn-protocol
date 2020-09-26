@@ -83,11 +83,14 @@ contract StrategyProxy {
     function deposit(address _gauge, address _token) external {
         uint256 _balance = IERC20(_token).balanceOf(address(this));
         IERC20(_token).safeTransfer(address(proxy), _balance);
-
         _balance = IERC20(_token).balanceOf(address(proxy));
+
         proxy.execute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, 0));
         proxy.execute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, _balance));
-        proxy.execute(_gauge, 0, abi.encodeWithSignature("deposit(uint256)", _balance));
+        (bool success, ) = proxy.execute(_gauge, 0, abi.encodeWithSignature("deposit(uint256)", _balance));
+        if (!success) {
+            throwInvalidOpcode();
+        }
     }
 
     function harvest(address _gauge) external {
@@ -97,5 +100,10 @@ contract StrategyProxy {
         uint256 _after = IERC20(crv).balanceOf(address(proxy));
         uint256 _balance = _after.sub(_before);
         proxy.execute(crv, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
+    }
+
+    function throwInvalidOpcode() public pure {
+        bool[] memory array = new bool[](0);
+        array[0] = array[0];
     }
 }
