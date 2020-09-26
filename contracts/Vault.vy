@@ -59,7 +59,7 @@ emergencyShutdown: public(bool)
 def __init__(_token: address, _governance: address):
     # TODO: Non-detailed Configuration?
     self.token = ERC20(_token)
-    self.name = concat("yearn", DetailedERC20(_token).name())
+    self.name = concat("yearn ", DetailedERC20(_token).name())
     self.symbol = concat("y", DetailedERC20(_token).symbol())
     self.decimals = DetailedERC20(_token).decimals()
     self.governance = _governance
