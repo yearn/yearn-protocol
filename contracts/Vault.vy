@@ -224,7 +224,7 @@ def revokeStrategy(_strategy: address = msg.sender):
     OR
     A strategy can revoke itself (Emergency Exit Mode)
     """
-    assert msg.sender == self.governance or self.strategies[_strategy].active
+    assert msg.sender == _strategy or msg.sender == self.governance
     self.strategies[_strategy].active = False
 
 
