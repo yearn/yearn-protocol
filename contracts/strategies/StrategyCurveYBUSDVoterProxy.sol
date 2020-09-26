@@ -7,29 +7,31 @@ import "@openzeppelinV2/contracts/math/SafeMath.sol";
 import "@openzeppelinV2/contracts/utils/Address.sol";
 import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 
-import "../../interfaces/curve/Curve.sol";
-import "../../interfaces/curve/Gauge.sol";
-import "../../interfaces/uniswap/Uni.sol";
-
 import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/yearn/Mintr.sol";
+import "../../interfaces/curve/Gauge.sol";
+import "../../interfaces/curve/Mintr.sol";
+import "../../interfaces/uniswap/Uni.sol";
+import "../../interfaces/curve/Curve.sol";
 import "../../interfaces/yearn/Token.sol";
+import "../../interfaces/yearn/VoterProxy.sol";
 
-contract StrategyCurveYCRVVoter {
+contract StrategyCurveYBUSDVoterProxy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
-    address public constant want = address(0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8);
-    address public constant pool = address(0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1);
-    address public constant mintr = address(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
+    address public constant want = address(0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B);
     address public constant crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
     address public constant uni = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
     address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> dai route
 
     address public constant dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
-    address public constant ydai = address(0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01);
-    address public constant curve = address(0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51);
+    address public constant ydai = address(0xC2cB1040220768554cf699b0d863A3cd4324ce32);
+    address public constant curve = address(0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27);
+
+    address public constant gauge = address(0x69Fb7c45726cfE2baDeE8317005d3F94bE838840);
+    address public constant proxy = address(0x5886E475e163f78CF63d6683AbC7fe8516d12081);
+    address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
 
     uint256 public keepCRV = 1000;
     uint256 public constant keepCRVMax = 10000;
@@ -51,7 +53,7 @@ contract StrategyCurveYCRVVoter {
     }
 
     function getName() external pure returns (string memory) {
-        return "StrategyCurveYCRVVoter";
+        return "StrategyCurveYBUSDVoterProxy";
     }
 
     function setStrategist(address _strategist) external {
@@ -77,9 +79,8 @@ contract StrategyCurveYCRVVoter {
     function deposit() public {
         uint256 _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
-            IERC20(want).safeApprove(pool, 0);
-            IERC20(want).safeApprove(pool, _want);
-            Gauge(pool).deposit(_want);
+            IERC20(want).safeTransfer(proxy, _want);
+            VoterProxy(proxy).deposit(gauge, want);
         }
     }
 
@@ -125,16 +126,16 @@ contract StrategyCurveYCRVVoter {
     }
 
     function _withdrawAll() internal {
-        Gauge(pool).withdraw(Gauge(pool).balanceOf(address(this)));
+        VoterProxy(proxy).withdrawAll(gauge, want);
     }
 
     function harvest() public {
         require(msg.sender == strategist || msg.sender == governance, "!authorized");
-        Mintr(mintr).mint(pool);
+        VoterProxy(proxy).harvest(gauge);
         uint256 _crv = IERC20(crv).balanceOf(address(this));
         if (_crv > 0) {
             uint256 _keepCRV = _crv.mul(keepCRV).div(keepCRVMax);
-            IERC20(crv).safeTransfer(IController(controller).rewards(), _keepCRV);
+            IERC20(crv).safeTransfer(voter, _keepCRV);
             _crv = _crv.sub(_keepCRV);
 
             IERC20(crv).safeApprove(uni, 0);
@@ -168,8 +169,7 @@ contract StrategyCurveYCRVVoter {
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
-        Gauge(pool).withdraw(_amount);
-        return _amount;
+        return VoterProxy(proxy).withdraw(gauge, want, _amount);
     }
 
     function balanceOfWant() public view returns (uint256) {
@@ -177,7 +177,7 @@ contract StrategyCurveYCRVVoter {
     }
 
     function balanceOfPool() public view returns (uint256) {
-        return Gauge(pool).balanceOf(address(this));
+        return VoterProxy(proxy).balanceOf(gauge);
     }
 
     function balanceOf() public view returns (uint256) {

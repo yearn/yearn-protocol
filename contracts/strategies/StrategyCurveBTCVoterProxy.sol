@@ -7,22 +7,20 @@ import "@openzeppelinV2/contracts/math/SafeMath.sol";
 import "@openzeppelinV2/contracts/utils/Address.sol";
 import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 
-import "../../interfaces/curve/Curve.sol";
-import "../../interfaces/curve/Gauge.sol";
-import "../../interfaces/uniswap/Uni.sol";
-
 import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/yearn/Mintr.sol";
+import "../../interfaces/curve/Gauge.sol";
+import "../../interfaces/curve/Mintr.sol";
+import "../../interfaces/uniswap/Uni.sol";
+import "../../interfaces/curve/Curve.sol";
 import "../../interfaces/yearn/Token.sol";
+import "../../interfaces/yearn/VoterProxy.sol";
 
-contract StrategyCurveSBTC {
+contract StrategyCurveBTCVoterProxy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
     address public constant want = address(0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3);
-    address public constant pool = address(0x705350c4BcD35c9441419DdD5d2f097d7a55410F);
-    address public constant mintr = address(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
     address public constant crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
     address public constant uni = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
     address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> wbtc route
@@ -30,14 +28,18 @@ contract StrategyCurveSBTC {
     address public constant wbtc = address(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
     address public constant curve = address(0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714);
 
+    address public constant gauge = address(0x705350c4BcD35c9441419DdD5d2f097d7a55410F);
+    address public constant proxy = address(0x5886E475e163f78CF63d6683AbC7fe8516d12081);
+    address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
+
+    uint256 public keepCRV = 1000;
+    uint256 public constant keepCRVMax = 10000;
+
     uint256 public performanceFee = 500;
     uint256 public constant performanceMax = 10000;
 
     uint256 public withdrawalFee = 50;
     uint256 public constant withdrawalMax = 10000;
-
-    uint256 public keepCRV = 1000;
-    uint256 public constant keepCRVMax = 10000;
 
     address public governance;
     address public controller;
@@ -50,7 +52,7 @@ contract StrategyCurveSBTC {
     }
 
     function getName() external pure returns (string memory) {
-        return "StrategyCurveSBTC";
+        return "StrategyCurveBTCVoterProxy";
     }
 
     function setStrategist(address _strategist) external {
@@ -76,9 +78,8 @@ contract StrategyCurveSBTC {
     function deposit() public {
         uint256 _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
-            IERC20(want).safeApprove(pool, 0);
-            IERC20(want).safeApprove(pool, _want);
-            Gauge(pool).deposit(_want);
+            IERC20(want).safeTransfer(proxy, _want);
+            VoterProxy(proxy).deposit(gauge, want);
         }
     }
 
@@ -86,8 +87,8 @@ contract StrategyCurveSBTC {
     function withdraw(IERC20 _asset) external returns (uint256 balance) {
         require(msg.sender == controller, "!controller");
         require(want != address(_asset), "want");
-        require(wbtc != address(_asset), "wbtc");
         require(crv != address(_asset), "crv");
+        require(wbtc != address(_asset), "wbtc");
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(controller, balance);
     }
@@ -123,19 +124,20 @@ contract StrategyCurveSBTC {
     }
 
     function _withdrawAll() internal {
-        Gauge(pool).withdraw(Gauge(pool).balanceOf(address(this)));
+        uint256 _before = balanceOf();
+        VoterProxy(proxy).withdrawAll(gauge, want);
+        require(_before == balanceOf(), "!slippage");
     }
 
     function harvest() public {
         require(msg.sender == strategist || msg.sender == governance, "!authorized");
-        Mintr(mintr).mint(pool);
+        VoterProxy(proxy).harvest(gauge);
         uint256 _crv = IERC20(crv).balanceOf(address(this));
-
-        uint256 _keepCRV = _crv.mul(keepCRV).div(keepCRVMax);
-        IERC20(crv).safeTransfer(IController(controller).rewards(), _keepCRV);
-        _crv = _crv.sub(_keepCRV);
-
         if (_crv > 0) {
+            uint256 _keepCRV = _crv.mul(keepCRV).div(keepCRVMax);
+            IERC20(crv).safeTransfer(voter, _keepCRV);
+            _crv = _crv.sub(_keepCRV);
+
             IERC20(crv).safeApprove(uni, 0);
             IERC20(crv).safeApprove(uni, _crv);
 
@@ -161,8 +163,7 @@ contract StrategyCurveSBTC {
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
-        Gauge(pool).withdraw(_amount);
-        return _amount;
+        return VoterProxy(proxy).withdraw(gauge, want, _amount);
     }
 
     function balanceOfWant() public view returns (uint256) {
@@ -170,7 +171,7 @@ contract StrategyCurveSBTC {
     }
 
     function balanceOfPool() public view returns (uint256) {
-        return Gauge(pool).balanceOf(address(this));
+        return VoterProxy(proxy).balanceOf(gauge);
     }
 
     function balanceOf() public view returns (uint256) {
