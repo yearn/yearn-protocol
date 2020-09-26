@@ -37,7 +37,7 @@ guardian: public(address)
 struct StrategyParams:
     blockAdded: uint256
     starting: decimal
-    maximum: decimal
+    debtLimit: decimal
     blockGain: decimal
     borrowed: uint256
     returns: uint256
@@ -177,17 +177,17 @@ def price() -> uint256:
 def addStrategy(
     _strategy: address,
     _startingCapital: uint256,
-    _maximumCapital: uint256,
+    _debtLimitCapital: uint256,
     _fadeIn: uint256,  # blocks
 ):
     assert msg.sender == self.governance
     starting: decimal = convert(_startingCapital, decimal)
-    maximum: decimal = convert(_maximumCapital, decimal)
+    debtLimit: decimal = convert(_debtLimitCapital, decimal)
     self.strategies[_strategy] = StrategyParams({
         blockAdded: block.number,
         starting: starting,
-        maximum: maximum,
-        blockGain: (maximum - starting) / convert(_fadeIn, decimal),
+        debtLimit: debtLimit,
+        blockGain: (debtLimit - starting) / convert(_fadeIn, decimal),
         borrowed: _startingCapital,
         returns: 0,
     })
@@ -205,12 +205,12 @@ def _available(_strategy: address) -> uint256:
     params: StrategyParams = self.strategies[_strategy]
     # Reserves available
     available: decimal = convert(self.token.balanceOf(self), decimal)
-    # Adjust by % borrowed
-    available *= (params.maximum - convert(params.borrowed, decimal)) / convert(params.borrowed, decimal)
+    # Adjust by % borrowed (vs. debt limit for strategy)
+    available *= (params.debtLimit - convert(params.borrowed, decimal)) / convert(params.borrowed, decimal)
     # Adjust by initial rate limiting algorithm
     available *= min(
         params.starting + params.blockGain * convert((block.number - params.blockAdded), decimal),
-        params.maximum,
+        params.debtLimit,
     )
     return convert(available, uint256)
 
