@@ -42,6 +42,13 @@ struct StrategyParams:
     borrowed: uint256
     returns: uint256
 
+event StrategyUpdate:
+    strategy: indexed(address)
+    returnAdded: uint256
+    debtAdded: uint256
+    totalReturn: uint256
+    totalBorrowed: uint256
+
 borrowed: public(uint256)  # Amount of tokens that all strategies have borrowed
 strategies: public(HashMap[address, StrategyParams])
 
@@ -186,6 +193,8 @@ def addStrategy(
     })
     self.token.transfer(_strategy, _startingCapital)
 
+    log StrategyUpdate(_strategy, 0, _startingCapital, 0, _startingCapital)
+
 
 @view
 @internal
@@ -251,5 +260,13 @@ def sync(_return: uint256) -> uint256:
     #       but it doesn't have any sort of logical effect here.
     #       Basically, if you see a return w/ zero borrowed, it's not a strategy
     self.strategies[msg.sender].returns += _return
+
+    log StrategyUpdate(
+        msg.sender,
+        _return,
+        available,
+        self.strategies[msg.sender].returns,
+        self.strategies[msg.sender].borrowed,
+    )
 
     return available
