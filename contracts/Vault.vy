@@ -214,7 +214,19 @@ def updateStrategy(_strategy: address, _debtLimit: uint256):
     self.strategies[_strategy].debtLimit = _debtLimit
 
 
-# TODO: Migrate Strategy (debt changes hands)
+@external
+def migrateStrategy(_newVersion: address):
+    """
+    Only a strategy can migrate itself to a new version
+    NOTE: Strategy must successfully migrate all capital and positions to
+          new Strategy, or else this will upset the balance of the Vault
+    """
+    assert self.strategies[msg.sender].active
+    assert not self.strategies[_newVersion].active
+    strategy: StrategyParams = self.strategies[msg.sender]
+    self.strategies[msg.sender] = empty(StrategyParams)
+    self.strategies[_newVersion] = strategy
+    # TODO: Ensure a smooth transition in terms of  strategy return
 
 
 @external
