@@ -74,7 +74,7 @@ def setGovernance(_governance: address):
 
 @external
 def setGuardian(_guardian: address):
-    assert msg.sender == self.guardian or msg.sender == self.governance
+    assert msg.sender in [self.guardian, self.governance]
     self.guardian = _guardian
 
 
@@ -83,7 +83,7 @@ def setEmergencyShutdown(_active: bool):
     """
     Activates Vault mode where all Strategies go into full withdrawal
     """
-    assert msg.sender == self.guardian or msg.sender == self.governance
+    assert msg.sender in [self.guardian, self.governance]
     self.emergencyShutdown = _active
 
 
@@ -236,7 +236,7 @@ def revokeStrategy(_strategy: address = msg.sender):
     OR
     A strategy can revoke itself (Emergency Exit Mode)
     """
-    assert msg.sender == _strategy or msg.sender == self.governance
+    assert msg.sender in [_strategy, self.governance]
     self.strategies[_strategy].active = False
 
 
