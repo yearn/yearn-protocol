@@ -218,8 +218,13 @@ def updateStrategy(_strategy: address, _debtLimit: uint256):
 
 
 @external
-def revokeStrategy(_strategy: address):
-    assert msg.sender == self.governance
+def revokeStrategy(_strategy: address = msg.sender):
+    """
+    Governance can revoke a strategy
+    OR
+    A strategy can revoke itself (Emergency Exit Mode)
+    """
+    assert msg.sender == self.governance or self.strategies[_strategy].active
     self.strategies[_strategy].active = False
 
 
@@ -252,11 +257,10 @@ def availableForStrategy(_strategy: address) -> uint256:
 
 
 @external
-def sync(_repayment: uint256, _emergencyExit: bool) -> int128:
+def sync(_repayment: uint256) -> int128:
     """
     Strategies call this.
     __repayment: amount Strategy has freely available and is giving back to Vault
-    _emergencyExit: whether strategy is in "Emergency Exit" mode
     returns: increase or decrease in amount lent out
     """
     # NOTE: For approved strategies, this is the most efficient behavior.
@@ -273,11 +277,7 @@ def sync(_repayment: uint256, _emergencyExit: bool) -> int128:
     # NOTE: All approved strategies must have increased diligience around
     #       calling this function, as abnormal behavior could become catastrophic
     creditline: uint256 = 0  # If Emergency shutdown, than always take
-    if (
-        self.strategies[msg.sender].active
-        and not _emergencyExit
-        and not self.emergencyShutdown
-    ):
+    if self.strategies[msg.sender].active and not self.emergencyShutdown:
         # Only in normal operation do we extend a line of credit to the Strategy
         creditline = self._available(msg.sender)
 
