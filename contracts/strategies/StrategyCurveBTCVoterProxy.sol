@@ -23,7 +23,7 @@ contract StrategyCurveBTCVoterProxy {
     address public constant want = address(0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3);
     address public constant crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
     address public constant uni = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-    address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> dai route
+    address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> wbtc route
 
     address public constant wbtc = address(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
     address public constant curve = address(0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714);
