@@ -3,11 +3,17 @@
 pragma solidity ^0.5.17;
 
 interface Governance {
-    function withdraw(uint) external;
+    function withdraw(uint256) external;
+
     function getReward() external;
-    function stake(uint) external;
-    function balanceOf(address) external view returns (uint);
+
+    function stake(uint256) external;
+
+    function balanceOf(address) external view returns (uint256);
+
     function exit() external;
-    function voteFor(uint) external;
-    function voteAgainst(uint) external;
+
+    function voteFor(uint256) external;
+
+    function voteAgainst(uint256) external;
 }

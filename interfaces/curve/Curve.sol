@@ -30,5 +30,9 @@ interface ICurveFi {
 }
 
 interface Zap {
-    function remove_liquidity_one_coin(uint, int128, uint) external;
+    function remove_liquidity_one_coin(
+        uint256,
+        int128,
+        uint256
+    ) external;
 }
