@@ -8,25 +8,25 @@ env:
 
 jobs:
 
-  lint:
+  brownie:
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        type: [functional]
+
     steps:
     - uses: actions/checkout@v1
 
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
+    - name: Cache Compiler Installations
+      uses: actions/cache@v2
       with:
-        python-version: 3.8
+        path: |
+          ~/.solcx
+          ~/.vvm
+        key: compiler-cache
 
-    - name: Install black
-      run: pip install -r requirements-dev.txt
-
-    - name: Run Black
-      run: black .
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
     - name: Check ETHERSCAN_TOKEN
       run: |
         if [ -z "$ETHERSCAN_TOKEN" ] ; then
@@ -39,15 +39,6 @@ jobs:
           echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
           exit 1
         fi
-    - uses: actions/checkout@v1
-
-    - name: Cache Compiler Installations
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.solcx
-          ~/.vvm
-        key: compiler-cache
 
     - name: Setup Node.js
       uses: actions/setup-node@v1
@@ -64,4 +55,4 @@ jobs:
       run: pip install -r requirements-dev.txt
 
     - name: Run Tests
-      run: brownie test -s --coverage
+      run: brownie test -s --coverage tests/${{ matrix.type }}/

@@ -1,14 +1,10 @@
-name: Solidity
+name: Lint
 
-on:
-  push:
-    branches: [master, develop]
-  pull_request:
-    branches: [master, develop]
+on: [push]
 
 jobs:
 
-    lint:
+    solidity:
       runs-on: ubuntu-latest
 
       steps:
@@ -35,3 +31,21 @@ jobs:
 
       - name: Run linter on *.sol and *.json
         run: yarn run lint:check
+
+    brownie:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+
+      - name: Install black
+        run: pip install -r requirements-dev.txt
+
+      - name: Run Black
+        run: black .
+
+# TODO: Add Slither Static Analyzer
