@@ -35,9 +35,10 @@ governance: public(address)
 guardian: public(address)
 
 struct StrategyParams:
+    active: bool
     blockAdded: uint256
     starting: decimal
-    debtLimit: decimal
+    debtLimit: uint256
     blockGain: decimal
     borrowed: uint256
     returns: uint256
@@ -50,8 +51,9 @@ event StrategyUpdate:
     totalBorrowed: uint256
 
 borrowed: public(uint256)  # Amount of tokens that all strategies have borrowed
+# NOTE: Track the total for overhead targeting purposes
 strategies: public(HashMap[address, StrategyParams])
-
+emergencyShutdown: public(bool)
 
 @external
 def __init__(_token: address, _governance: address):
@@ -74,6 +76,15 @@ def setGovernance(_governance: address):
 def setGuardian(_guardian: address):
     assert msg.sender == self.guardian or msg.sender == self.governance
     self.guardian = _guardian
+
+
+@external
+def setEmergencyShutdown(_active: bool):
+    """
+    Activates Vault mode where all Strategies go into full withdrawal
+    """
+    assert msg.sender == self.guardian or msg.sender == self.governance
+    self.emergencyShutdown = _active
 
 
 @external
@@ -184,9 +195,10 @@ def addStrategy(
     starting: decimal = convert(_startingCapital, decimal)
     debtLimit: decimal = convert(_debtLimitCapital, decimal)
     self.strategies[_strategy] = StrategyParams({
+        active: True,
         blockAdded: block.number,
         starting: starting,
-        debtLimit: debtLimit,
+        debtLimit: _debtLimitCapital,
         blockGain: (debtLimit - starting) / convert(_fadeIn, decimal),
         borrowed: _startingCapital,
         returns: 0,
@@ -196,21 +208,36 @@ def addStrategy(
     log StrategyUpdate(_strategy, 0, _startingCapital, 0, _startingCapital)
 
 
+@external
+def updateStrategy(_strategy: address, _debtLimit: uint256):
+    assert msg.sender == self.governance
+    self.strategies[_strategy].debtLimit = _debtLimit
+
+
+# TODO: Migrate Strategy (debt changes hands)
+
+
+@external
+def revokeStrategy(_strategy: address):
+    assert msg.sender == self.governance
+    self.strategies[_strategy].active = False
+
+
 @view
 @internal
 def _available(_strategy: address) -> uint256:
     """
-    Amount of tokens in vault available to
+    Amount of tokens in vault a strategy has access to as a credit line
     """
     params: StrategyParams = self.strategies[_strategy]
     # Reserves available
     available: decimal = convert(self.token.balanceOf(self), decimal)
     # Adjust by % borrowed (vs. debt limit for strategy)
-    available *= (params.debtLimit - convert(params.borrowed, decimal)) / convert(params.borrowed, decimal)
+    available *= (convert(params.debtLimit, decimal) - convert(params.borrowed, decimal)) / convert(params.borrowed, decimal)
     # Adjust by initial rate limiting algorithm
     available *= min(
         params.starting + params.blockGain * convert((block.number - params.blockAdded), decimal),
-        params.debtLimit,
+        convert(params.debtLimit, decimal),
     )
     return convert(available, uint256)
 
@@ -218,55 +245,67 @@ def _available(_strategy: address) -> uint256:
 @view
 @external
 def availableForStrategy(_strategy: address) -> uint256:
-    return self._available(_strategy)
+    if not self.strategies[_strategy].active or self.emergencyShutdown:
+        return 0
+    else:
+        return self._available(_strategy)
 
 
 @external
-def sync(_return: uint256) -> uint256:
+def sync(_repayment: uint256, _emergencyExit: bool) -> int128:
+    """
+    Strategies call this.
+    __repayment: amount Strategy has freely available and is giving back to Vault
+    _emergencyExit: whether strategy is in "Emergency Exit" mode
+    returns: increase or decrease in amount lent out
+    """
     # NOTE: For approved strategies, this is the most efficient behavior.
     #       Strategy reports back what it has free (usually in terms of ROI)
     #       and then Vault "decides" here whether to take some back or give it more.
-    #       Note that the most it can take is `_return`, and the most it can give is
+    #       Note that the most it can take is `_repayment`, and the most it can give is
     #       all of the remaining reserves. Anything outside of those bounds is abnormal
     #       behavior.
     # NOTE: This call is unprotected and that is acceptable behavior.
     #       In the scenario that msg.sender is not an approved strategy,
-    #       then it will not be possible to get available > 0 to trigger
+    #       then it will not be possible to get `creditline > 0` to trigger
     #       the first condition (which gets tokens). The call will revert if
-    #       msg.sender is not an approved strategy and it is called with _return > 0.
+    #       msg.sender is not an approved strategy and it is called with `_repayment > 0`.
     # NOTE: All approved strategies must have increased diligience around
     #       calling this function, as abnormal behavior could become catastrophic
-    available: uint256 = self._available(msg.sender)
-    if _return < available:
-        self.token.transfer(msg.sender, available - _return)
-        self.strategies[msg.sender].borrowed += available - _return
-        self.borrowed += available - _return
-    elif _return > available:
-        self.token.transferFrom(msg.sender, self, _return - available)
-        self.strategies[msg.sender].borrowed += available
-        self.borrowed += available
-        if self.strategies[msg.sender].borrowed > _return:
-            self.strategies[msg.sender].borrowed -= _return
-        else:
-            self.strategies[msg.sender].borrowed = 0
-        if self.borrowed > _return:
-            self.borrowed -= _return
-        else:
-            self.borrowed = 0
-    # else if nothing to balance, don't do anything
+    creditline: uint256 = 0  # If Emergency shutdown, than always take
+    if (
+        self.strategies[msg.sender].active
+        and not _emergencyExit
+        and not self.emergencyShutdown
+    ):
+        # Only in normal operation do we extend a line of credit to the Strategy
+        creditline = self._available(msg.sender)
+
+    if _repayment < creditline:  # Underperforming, give a boost
+        diff: uint256 = creditline - _repayment  # Give the difference
+        self.token.transfer(msg.sender, diff)
+        self.strategies[msg.sender].borrowed += diff
+        self.borrowed += diff
+    elif _repayment > creditline:  # Overperforming, take a cut
+        diff: uint256 = _repayment - creditline  # Take the difference
+        self.token.transferFrom(msg.sender, self, diff)
+        # NOTE: Cannot return more than you borrowed (after adjusting for returns)
+        self.strategies[msg.sender].borrowed -= diff
+        self.borrowed -= diff
+    # else if matching, don't do anything because it is performing well as is
 
     # Returns are always "realized gains"
     # NOTE: This is the only value an "attacker" can manipulate,
     #       but it doesn't have any sort of logical effect here.
     #       Basically, if you see a return w/ zero borrowed, it's not a strategy
-    self.strategies[msg.sender].returns += _return
+    self.strategies[msg.sender].returns += _repayment
 
     log StrategyUpdate(
         msg.sender,
-        _return,
-        available,
+        _repayment,
+        creditline,
         self.strategies[msg.sender].returns,
         self.strategies[msg.sender].borrowed,
     )
 
-    return available
+    return convert(creditline, int128) - convert(_repayment, int128)
