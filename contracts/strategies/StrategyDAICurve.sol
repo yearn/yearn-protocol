@@ -8,9 +8,9 @@ import "@openzeppelinV2/contracts/utils/Address.sol";
 import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 
 import "../../interfaces/curve/Curve.sol";
+import "../../interfaces/curve/Mintr.sol";
 
 import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/yearn/Mintr.sol";
 import "../../interfaces/yearn/Token.sol";
 
 contract StrategyDAICurve {
