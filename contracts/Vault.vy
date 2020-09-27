@@ -269,11 +269,10 @@ def availableForStrategy(_strategy: address) -> uint256:
 
 
 @external
-def sync(_repayment: uint256) -> int128:
+def sync(_repayment: uint256):
     """
     Strategies call this.
-    __repayment: amount Strategy has freely available and is giving back to Vault
-    returns: increase or decrease in amount lent out
+    _repayment: amount Strategy has freely available and is giving back to Vault
     """
     # NOTE: For approved strategies, this is the most efficient behavior.
     #       Strategy reports back what it has free (usually in terms of ROI)
@@ -319,5 +318,3 @@ def sync(_repayment: uint256) -> int128:
         self.strategies[msg.sender].returns,
         self.strategies[msg.sender].borrowed,
     )
-
-    return convert(creditline, int128) - convert(_repayment, int128)
