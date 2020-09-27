@@ -261,7 +261,7 @@ def _available(_strategy: address) -> uint256:
 
 @view
 @external
-def availableForStrategy(_strategy: address) -> uint256:
+def availableForStrategy(_strategy: address = msg.sender) -> uint256:
     if not self.strategies[_strategy].active or self.emergencyShutdown:
         return 0
     else:
