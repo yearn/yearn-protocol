@@ -166,10 +166,10 @@
   resolved "https://registry.yarnpkg.com/@commitlint/types/-/types-11.0.0.tgz#719cf05fcc1abb6533610a2e0f5dd1e61eac14fe"
   integrity sha512-VoNqai1vR5anRF5Tuh/+SWDFk7xi7oMwHrHrbm1BprYXjB2RJsWLhUrStMssDxEl5lW/z3EUdg8RvH/IUBccSQ==
 
-"@solidity-parser/parser@^0.8.0":
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.8.0.tgz#e56fe5f0e29753f928c8fb1ddf5f59e5d71363e9"
-  integrity sha512-4Eg1iWe6ZuJC9Ynfd8D2cnu06So0QL6V3i+fgQRqT8twPMr+N+kUvS5K7ILgWpuoAag/jb3r0wBDfmpib+yvaw==
+"@solidity-parser/parser@^0.8.1":
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.8.1.tgz#1b606578af86b9ad10755409804a6ba83f9ce8a4"
+  integrity sha512-DF7H6T8I4lo2IZOE2NZwt3631T8j1gjpQLjmvY2xBNK50c4ltslR4XPKwT6RkeSd4+xCAK0GHC/k7sbRDBE4Yw==
 
 "@types/color-name@^1.1.1":
   version "1.1.1"
@@ -2026,11 +2026,11 @@ preserve@^0.2.0:
   integrity sha1-gV7R9uvGWSb4ZbMQwHE7yzMVzks=
 
 prettier-plugin-solidity@^1.0.0-alpha.57:
-  version "1.0.0-alpha.57"
-  resolved "https://registry.yarnpkg.com/prettier-plugin-solidity/-/prettier-plugin-solidity-1.0.0-alpha.57.tgz#972190efe96bce816f3af3f74948c8b86ad0abb1"
-  integrity sha512-GTcL3OzxPn54TMlopE+wcXOUfEnpw05jvJw3KJrXkWTHER1CbkuAFRP4xiFtbJYq35ssSRO5FN4yMshx2grTIw==
+  version "1.0.0-alpha.58"
+  resolved "https://registry.yarnpkg.com/prettier-plugin-solidity/-/prettier-plugin-solidity-1.0.0-alpha.58.tgz#87e44b21bd9bd6ad4b28b1ac62ccdce59fb82fe3"
+  integrity sha512-G2xj98uEtfTcSc4qZcQ+MLwibpDNhBmOJk9ezTJ7uQLtTMGP1X9PqRnRlJW/vxbStPw/TVvnYD5rXwd1KZbTsg==
   dependencies:
-    "@solidity-parser/parser" "^0.8.0"
+    "@solidity-parser/parser" "^0.8.1"
     dir-to-object "^2.0.0"
     emoji-regex "^9.0.0"
     escape-string-regexp "^4.0.0"
@@ -2039,10 +2039,10 @@ prettier-plugin-solidity@^1.0.0-alpha.57:
     semver "^7.3.2"
     string-width "^4.2.0"
 
-prettier@^2.0.5, prettier@^2.1.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.1.1.tgz#d9485dd5e499daa6cb547023b87a6cf51bee37d6"
-  integrity sha512-9bY+5ZWCfqj3ghYBLxApy2zf6m+NJo5GzmLTpr9FsApsfjriNnS2dahWReHMi7qNPhhHl9SYHJs2cHZLgexNIw==
+prettier@^2.0.5, prettier@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.1.2.tgz#3050700dae2e4c8b67c4c3f666cdb8af405e1ce5"
+  integrity sha512-16c7K+x4qVlJg9rEbXl7HEGmQyZlG4R9AgP+oHKRMsMsuk8s+ATStlf1NpDqyBI1HpVyfjLOeMhH2LvuNvV5Vg==
 
 pretty-quick@^3.0.2:
   version "3.0.2"
