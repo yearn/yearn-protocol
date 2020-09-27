@@ -17,9 +17,12 @@ jobs:
         type: [functional]
 
     steps:
-    - uses: actions/checkout@v1
+    - name: Check out github repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
 
-    - name: Cache Compiler Installations
+    - name: Cache compiler installations
       uses: actions/cache@v2
       with:
         path: |
@@ -33,6 +36,7 @@ jobs:
           echo "Missing ENV variable ETHERSCAN_TOKEN"
           exit 1
         fi
+
     - name: Check WEB3_INFURA_PROJECT_ID
       run: |
         if [ -z "$WEB3_INFURA_PROJECT_ID" ] ; then
@@ -40,14 +44,16 @@ jobs:
           exit 1
         fi
 
-    - name: Setup Node.js
+    - name: Setup node.js
       uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
 
     - name: Install Ganache
       run: npm install -g ganache-cli@6.11.0
 
     - name: Set up Python 3.8
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: 3.8
 
