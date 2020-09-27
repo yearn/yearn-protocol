@@ -2,12 +2,18 @@
     "name": "yearn-protocol",
     "devDependencies": {
         "ethlint": "^1.2.5",
+        "husky": "^4.3.0",
         "prettier": "^2.1.1",
-        "prettier-plugin-solidity": "^1.0.0-alpha.57"
+        "prettier-plugin-solidity": "^1.0.0-alpha.57",
+        "pretty-quick": "^3.0.2"
     },
     "scripts": {
-        "lint": "prettier --list-different **/*.sol **/*.json",
-        "lint:check": "prettier --check **/*.sol **/*.json",
-        "lint:fix": "prettier --write **/*.sol **/*.json"
+        "lint:check": "pretty-quick --check --verbose --pattern **/*.sol **/*.json",
+        "lint:fix": "pretty-quick --staged --verbose --pattern **/*.sol **/*.json"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "yarn lint:fix"
+        }
     }
 }
