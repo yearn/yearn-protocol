@@ -1,30 +1,16 @@
 # use Ganache's forked mainnet mode as the default network
 networks:
-  default: mainnet-fork
-  mainnet-fork:
-    cmd_settings:
-      unlock:
-        - 0xD551234Ae421e3BCBA99A0Da6d736074f22192FF  # Binance 2
-        - 0x564286362092D8e7936f0549571a803B203aAceD  # Binance 3
-        - 0x0681d8Db095565FE8A346fA0277bFfdE9C0eDBBF  # Binance 4
-        - 0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8  # Binance 7
-        - 0xF977814e90dA44bFA03b6295A0616a897441aceC  # Binance 8
-        - 0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE  # Binance
-
-# automatically fetch contract sources from Etherscan
-autofetch_sources: True
+  default: development
 
 # require OpenZepplin Contracts
 dependencies:
-  - OpenZeppelin/openzeppelin-contracts@2.5.1
   - OpenZeppelin/openzeppelin-contracts@3.1.0
 
 # path remapping to support OpenZepplin imports with NPM-style path
 compiler:
   solc:
-    version: 0.5.17
+    version: 0.6.12
     remappings:
-      - "@openzeppelinV2=OpenZeppelin/openzeppelin-contracts@2.5.1"
       - "@openzeppelinV3=OpenZeppelin/openzeppelin-contracts@3.1.0"
 
 reports:
