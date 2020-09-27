@@ -33,6 +33,7 @@ totalSupply: public(uint256)
 token: public(ERC20)
 governance: public(address)
 guardian: public(address)
+pendingGovernance: address
 
 struct StrategyParams:
     active: bool
@@ -68,10 +69,17 @@ def __init__(_token: address, _governance: address):
     self.guardian = msg.sender
 
 
+# 2-phase commit for a change in governance
 @external
 def setGovernance(_governance: address):
     assert msg.sender == self.governance
-    self.governance = _governance
+    self.pendingGovernance = _governance
+
+
+@external
+def acceptGovernance():
+    assert msg.sender == self.pendingGovernance
+    self.governance = msg.sender
 
 
 @external
