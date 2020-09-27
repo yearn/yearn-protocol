@@ -56,7 +56,8 @@ borrowed: public(uint256)  # Amount of tokens that all strategies have borrowed
 strategies: public(HashMap[address, StrategyParams])
 emergencyShutdown: public(bool)
 
-# TODO: Add management fee for governance
+managementFee: public(uint256)
+MANAGEMENT_FEE_MAX: constant(uint256) = 10000
 
 @external
 def __init__(_token: address, _governance: address):
@@ -67,6 +68,7 @@ def __init__(_token: address, _governance: address):
     self.decimals = DetailedERC20(_token).decimals()
     self.governance = _governance
     self.guardian = msg.sender
+    self.managementFee = 500  # 5%
 
 
 # 2-phase commit for a change in governance
@@ -80,6 +82,12 @@ def setGovernance(_governance: address):
 def acceptGovernance():
     assert msg.sender == self.pendingGovernance
     self.governance = msg.sender
+
+
+@external
+def setManagementFee(_fee: uint256):
+    assert msg.sender == self.governance
+    self.managementFee = _fee
 
 
 @external
@@ -185,7 +193,9 @@ def withdraw(_shares: uint256):
 
 
     # Withdraw balance (NOTE: fails currently if value > reserve)
-    self.token.transfer(msg.sender, value)
+    fee: uint256 = (value * self.managementFee) / MANAGEMENT_FEE_MAX
+    self.token.transfer(self.governance, fee)  # Thank you for your service!
+    self.token.transfer(msg.sender, value - fee)
 
 
 @view
