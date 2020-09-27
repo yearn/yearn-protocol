@@ -180,7 +180,7 @@ def withdraw(_shares: uint256):
 
 @view
 @external
-def price() -> uint256:
+def pricePerShare() -> uint256:
     return self._shareValue(10 ** self.decimals)
 
 
