@@ -55,6 +55,8 @@ borrowed: public(uint256)  # Amount of tokens that all strategies have borrowed
 strategies: public(HashMap[address, StrategyParams])
 emergencyShutdown: public(bool)
 
+# TODO: Add management fee for governance
+
 @external
 def __init__(_token: address, _governance: address):
     # TODO: Non-detailed Configuration?
