@@ -81,7 +81,7 @@ abstract contract BaseStrategy {
 
     bool public emergencyExit;
 
-    constructor(address _vault, address _governance) {
+    constructor(address _vault, address _governance) public {
         vault = VaultAPI(_vault);
         want = IERC20(vault.token());
         strategist = msg.sender;
@@ -115,23 +115,23 @@ abstract contract BaseStrategy {
      * would provide to the Vault the next time `sync()` is called
      * (since the last time it was called)
      */
-    function expectedReturn() public view returns (uint256);
+    function expectedReturn() public virtual view returns (uint256);
 
     /*
      * Perform any strategy unwinding or other calls necessary to capture
      * the "free return" this strategy has generated since the last time it's
      * core position(s) were adusted.
      */
-    function prepareReturn() internal;
+    function prepareReturn() internal virtual;
 
     /*
      * Perform any adjustments to the core position(s) of this strategy given
      * what change the Vault made in the "free return" available to the strategy.
      * Note that all "free returns" in the strategy
      */
-    function adjustPosition() internal;
+    function adjustPosition() internal virtual;
 
-    function exitPosition() internal;
+    function exitPosition() internal virtual;
 
     function harvest() external {
         require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance);
@@ -156,18 +156,19 @@ abstract contract BaseStrategy {
         // TODO: Could move fee calculation here, would actually bias more towards growth
     }
 
-    function prepareMigration(address _newStrategy) internal;
+    function prepareMigration(address _newStrategy) internal virtual;
 
     function migrate(address _newStrategy) external {
         require(msg.sender == strategist || msg.sender == governance);
         prepareMigration(_newStrategy);
-        migrateStrategy(_newStrategy);
+        vault.migrateStrategy(_newStrategy);
     }
 
     function setEmergencyExit() external {
         require(msg.sender == strategist || msg.sender == governance);
         emergencyExit = true;
         exitPosition();
+        vault.revokeStrategy();
         vault.sync(want.balanceOf(address(this)).sub(reserve));
     }
 }
