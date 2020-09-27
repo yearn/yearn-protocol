@@ -105,6 +105,11 @@ abstract contract BaseStrategy {
         strategist = _strategist;
     }
 
+    function setKeeper(address _keeper) external {
+        require(msg.sender == strategist || msg.sender == governance, "!governance");
+        keeper = _keeper;
+    }
+
     function setPerformanceFee(uint256 _performanceFee) external {
         require(msg.sender == governance, "!governance");
         performanceFee = _performanceFee;
