@@ -1,6 +1,6 @@
 name: Lint
 
-on: [push]
+on: [pull_request, push]
 
 jobs:
 
@@ -30,10 +30,20 @@ jobs:
         run: yarn
 
       - name: Run linter on *.sol and *.json
-        run: yarn run lint:check
+        run: yarn lint:check
+
+    commits:
+        runs-on: ubuntu-latest
+
+        steps:
+        - uses: actions/checkout@v2
+          with:
+            fetch-depth: 0
+        - uses: wagoid/commitlint-github-action@v2
 
     brownie:
       runs-on: ubuntu-latest
+
       steps:
       - uses: actions/checkout@v1
 
