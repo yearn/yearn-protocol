@@ -205,6 +205,7 @@ def addStrategy(
         borrowed: _startingCapital,
         returns: 0,
     })
+    self.borrowed += _startingCapital
     self.token.transfer(_strategy, _startingCapital)
 
     log StrategyUpdate(_strategy, 0, _startingCapital, 0, _startingCapital)
