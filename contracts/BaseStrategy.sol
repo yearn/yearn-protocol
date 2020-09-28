@@ -139,6 +139,12 @@ abstract contract BaseStrategy {
 
     function exitPosition() internal virtual;
 
+    function tend() external {
+        require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance);
+        // NOTE: Don't take profits with this call, but adjust for better gains
+        adjustPosition();
+    }
+
     function harvest() external {
         require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance);
 
