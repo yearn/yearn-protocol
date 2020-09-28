@@ -30,7 +30,7 @@ interface VaultAPI {
      * Therefore, this function will be called by BaseStrategy to make sure the
      * integration is correct.
      */
-    function sync(uint256 _repayment) external;
+    function sync(uint256 _return) external;
 
     /*
      * This function is used in the scenario where there is a newer strategy that

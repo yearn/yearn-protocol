@@ -301,15 +301,15 @@ def availableForStrategy(_strategy: address = msg.sender) -> uint256:
 
 
 @external
-def sync(_repayment: uint256):
+def sync(_return: uint256):
     """
     Strategies call this.
-    _repayment: amount Strategy has freely available and is giving back to Vault
+    _return: amount Strategy has made since last sync, and is given back to Vault
     """
     # NOTE: For approved strategies, this is the most efficient behavior.
     #       Strategy reports back what it has free (usually in terms of ROI)
     #       and then Vault "decides" here whether to take some back or give it more.
-    #       Note that the most it can take is `_repayment`, and the most it can give is
+    #       Note that the most it can take is `_return`, and the most it can give is
     #       all of the remaining reserves. Anything outside of those bounds is abnormal
     #       behavior.
     # NOTE: All approved strategies must have increased diligience around
@@ -320,17 +320,17 @@ def sync(_repayment: uint256):
 
     # Issue new shares to cover fee
     # NOTE: In effect, this reduces overall share price by performanceFee
-    fee: uint256 = (_repayment * self.performanceFee) / PERFORMANCE_FEE_MAX
+    fee: uint256 = (_return * self.performanceFee) / PERFORMANCE_FEE_MAX
     self._issueSharesForAmount(self.rewards, fee)
 
     creditline: uint256 = self._available(msg.sender)
-    if _repayment < creditline:  # Underperforming, give a boost
-        diff: uint256 = creditline - _repayment  # Give the difference
+    if _return < creditline:  # Underperforming, give a boost
+        diff: uint256 = creditline - _return  # Give the difference
         self.token.transfer(msg.sender, diff)
         self.strategies[msg.sender].borrowed += diff
         self.borrowed += diff
-    elif _repayment > creditline:  # Overperforming, take a cut
-        diff: uint256 = _repayment - creditline  # Take the difference
+    elif _return > creditline:  # Overperforming, take a cut
+        diff: uint256 = _return - creditline  # Take the difference
         self.token.transferFrom(msg.sender, self, diff)
         # NOTE: Cannot return more than you borrowed (after adjusting for returns)
         self.strategies[msg.sender].borrowed -= diff
@@ -338,11 +338,11 @@ def sync(_repayment: uint256):
     # else if matching, don't do anything because it is performing well as is
 
     # Returns are always "realized gains"
-    self.strategies[msg.sender].returns += _repayment
+    self.strategies[msg.sender].returns += _return
 
     log StrategyUpdate(
         msg.sender,
-        _repayment,
+        _return,
         creditline,
         self.strategies[msg.sender].returns,
         self.strategies[msg.sender].borrowed,
