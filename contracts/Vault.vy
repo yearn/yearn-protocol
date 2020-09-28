@@ -172,41 +172,19 @@ def _shareValue(_shares: uint256) -> uint256:
 
 
 @external
-def withdraw(_shares: uint256):
-    # Calculate underlying value of shares (How much the shares are worth)
-    value: uint256 = self._shareValue(_shares)
-    # TODO: Should we limit withdrawal size to the proportional amount of "free"
-    #       reserve as the user's share of whole would dicate? This would prevent
-    #       "bank run" behavior by rate limiting withdrawals (in a way) during
-    #       larger outflow events such as Vault upgrade or Emergency Shutdown
-    # Adjust by ratio of reserves:total
-    #value *= self.token.balanceOf(self)
-    #value /= self.token.balanceOf(self) + self.borrowed
-    # Then: delete `reserve` section below
+def withdraw(_maxShares: uint256):
+    # Take the lesser of the amount _maxShares is worth, or the amount in the "free" pool
+    value: uint256 = min(self._shareValue(_maxShares), self.token.balanceOf(self))
+    # Calculate how many shares correspond to that value
+    shares: uint256 = value * self.totalSupply / (self.token.balanceOf(self) + self.borrowed)
+    assert value == self._shareValue(shares)  # Sanity check (TODO: Validate unnecessary)
 
     # Burn shares
-    self.totalSupply -= value
-    self.balanceOf[msg.sender] -= value
-    log Transfer(msg.sender, ZERO_ADDRESS, value)
+    self.totalSupply -= shares
+    self.balanceOf[msg.sender] -= shares
+    log Transfer(msg.sender, ZERO_ADDRESS, shares)
 
-    reserve: uint256 = self.token.balanceOf(self)
-    if value > reserve:
-        deficit: uint256 = value - reserve
-        # TODO: Obtain deficit from strategies... somehow
-        #       But wait, if strategies don't have free capital then unwinding
-        #       may be painful and trigger losses. Isn't it better to let just
-        #       the `reserve` be available for withdrawals?
-        #       If we maintain a reserve ratio (inversely proportional to risk)
-        #       then withdrawals will be capped, "but unwinding" of strategies
-        #       would happen more gracefully as the `available` amount for the
-        #       strategy would decrease w/ the overall lower total collateral.
-        #       Withdrawing a little bit at a time (pulling from reserves) is
-        #       "safer" than pulling a lot all at once, and is more natural to
-        #       outside observers who will build an expectation of their "free"
-        #       capital being locked up in the system above and beyond the reserve
-
-
-    # Withdraw balance (NOTE: fails currently if value > reserve)
+    # Withdraw balance
     self.token.transfer(msg.sender, value)
 
 
