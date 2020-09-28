@@ -270,7 +270,7 @@ def revokeStrategy(_strategy: address = msg.sender):
     A strategy can revoke itself (Emergency Exit Mode)
     """
     assert msg.sender in [_strategy, self.governance]
-    self.strategies[_strategy].active = False
+    self.strategies[_strategy].debtLimit = 0
 
 
 @view
@@ -279,6 +279,8 @@ def _available(_strategy: address) -> uint256:
     """
     Amount of tokens in vault a strategy has access to as a credit line
     """
+    if self.emergencyShutdown:
+        return 0
     params: StrategyParams = self.strategies[_strategy]
     # Reserves available
     available: decimal = convert(self.token.balanceOf(self), decimal)
@@ -287,7 +289,7 @@ def _available(_strategy: address) -> uint256:
     # Adjust by initial rate limiting algorithm
     available *= min(
         params.starting + params.blockGain * convert((block.number - params.blockAdded), decimal),
-        convert(params.debtLimit, decimal),
+        convert(params.debtLimit, decimal),  # 0 when a strategy is revoked
     )
     return convert(available, uint256)
 
@@ -295,10 +297,7 @@ def _available(_strategy: address) -> uint256:
 @view
 @external
 def availableForStrategy(_strategy: address = msg.sender) -> uint256:
-    if not self.strategies[_strategy].active or self.emergencyShutdown:
-        return 0
-    else:
-        return self._available(_strategy)
+    return self._available(_strategy)
 
 
 @external
@@ -313,25 +312,18 @@ def sync(_repayment: uint256):
     #       Note that the most it can take is `_repayment`, and the most it can give is
     #       all of the remaining reserves. Anything outside of those bounds is abnormal
     #       behavior.
-    # NOTE: This call is unprotected and that is acceptable behavior.
-    #       In the scenario that msg.sender is not an approved strategy,
-    #       then it will not be possible to get `creditline > 0` to trigger
-    #       the first condition (which gets tokens). The call will revert if
-    #       msg.sender is not an approved strategy and it is called with `_repayment > 0`.
     # NOTE: All approved strategies must have increased diligience around
     #       calling this function, as abnormal behavior could become catastrophic
+
+    # Only approved strategies can call this function
+    assert self.strategies[msg.sender].active
 
     # Issue new shares to cover fee
     # NOTE: In effect, this reduces overall share price by performanceFee
     fee: uint256 = (_repayment * self.performanceFee) / PERFORMANCE_FEE_MAX
     self._issueSharesForAmount(self.rewards, fee)
 
-
-    creditline: uint256 = 0  # If Emergency shutdown, than always take
-    if self.strategies[msg.sender].active and not self.emergencyShutdown:
-        # Only in normal operation do we extend a line of credit to the Strategy
-        creditline = self._available(msg.sender)
-
+    creditline: uint256 = self._available(msg.sender)
     if _repayment < creditline:  # Underperforming, give a boost
         diff: uint256 = creditline - _repayment  # Give the difference
         self.token.transfer(msg.sender, diff)
@@ -346,9 +338,6 @@ def sync(_repayment: uint256):
     # else if matching, don't do anything because it is performing well as is
 
     # Returns are always "realized gains"
-    # NOTE: This is the only value an "attacker" can manipulate,
-    #       but it doesn't have any sort of logical effect here.
-    #       Basically, if you see a return w/ zero borrowed, it's not a strategy
     self.strategies[msg.sender].returns += _repayment
 
     log StrategyUpdate(
