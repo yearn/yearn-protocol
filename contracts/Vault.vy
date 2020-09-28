@@ -318,10 +318,12 @@ def sync(_return: uint256):
     # Only approved strategies can call this function
     assert self.strategies[msg.sender].active
 
-    # Issue new shares to cover fee
+    # Issue new shares to cover fee (if strategy is active)
     # NOTE: In effect, this reduces overall share price by performanceFee
-    fee: uint256 = (_return * self.performanceFee) / PERFORMANCE_FEE_MAX
-    self._issueSharesForAmount(self.rewards, fee)
+    # NOTE: No fee is taken when a strategy is unwinding it's position
+    if self.strategies[msg.sender].debtLimit > 0:
+        fee: uint256 = (_return * self.performanceFee) / PERFORMANCE_FEE_MAX
+        self._issueSharesForAmount(self.rewards, fee)
 
     creditline: uint256 = self._available(msg.sender)
     if _return < creditline:  # Underperforming, give a boost
