@@ -57,8 +57,8 @@ strategies: public(HashMap[address, StrategyParams])
 emergencyShutdown: public(bool)
 
 rewards: public(address)
-managementFee: public(uint256)
-MANAGEMENT_FEE_MAX: constant(uint256) = 10000
+performanceFee: public(uint256)
+PERFORMANCE_FEE_MAX: constant(uint256) = 10000
 
 @external
 def __init__(_token: address, _governance: address, _rewards: address):
@@ -70,7 +70,7 @@ def __init__(_token: address, _governance: address, _rewards: address):
     self.governance = _governance
     self.rewards = _rewards
     self.guardian = msg.sender
-    self.managementFee = 500  # 5%
+    self.performanceFee = 500  # 5%
 
 
 # 2-phase commit for a change in governance
@@ -95,7 +95,7 @@ def setRewards(_rewards: address):
 @external
 def setManagementFee(_fee: uint256):
     assert msg.sender == self.governance
-    self.managementFee = _fee
+    self.performanceFee = _fee
 
 
 @external
@@ -138,6 +138,23 @@ def approve(_spender : address, _value : uint256) -> bool:
     return True
 
 
+@internal
+def _issueSharesForAmount(_to: address, _amount: uint256):
+    shares: uint256 = 0
+    if self.totalSupply > 0:
+        # Mint amount of shares based on what the Vault is managing overall
+        totalAssets: uint256 = self.token.balanceOf(self) + self.borrowed
+        shares = (_amount / totalAssets) * self.totalSupply
+    else:
+        # No existing shares, so mint 1:1
+        shares = _amount
+
+    # Mint new shares
+    self.totalSupply += shares
+    self.balanceOf[_to] += shares
+    log Transfer(ZERO_ADDRESS, _to, shares)
+
+
 @external
 def deposit(_amount: uint256):
     # Get new collateral
@@ -145,18 +162,7 @@ def deposit(_amount: uint256):
     self.token.transferFrom(msg.sender, self, _amount)
     # TODO: `Deflationary` configuration only
     assert self.token.balanceOf(self) - reserve == _amount  # Deflationary token check
-
-    # Mint new shares
-    shares: uint256 = 0
-    if self.totalSupply > 0:
-        # Mint amount of shares based on what the Vault has overall
-        shares = (_amount * self.totalSupply) / (self.borrowed + reserve)
-    else:
-        # No existing shares, so mint 1:1
-        shares = _amount
-    self.totalSupply += shares
-    self.balanceOf[msg.sender] += shares
-    log Transfer(ZERO_ADDRESS, msg.sender, shares)
+    self._issueSharesForAmount(msg.sender, _amount)
 
 
 @view
@@ -201,9 +207,7 @@ def withdraw(_shares: uint256):
 
 
     # Withdraw balance (NOTE: fails currently if value > reserve)
-    fee: uint256 = (value * self.managementFee) / MANAGEMENT_FEE_MAX
-    self.token.transfer(self.rewards, fee)  # Thank you for your service!
-    self.token.transfer(msg.sender, value - fee)
+    self.token.transfer(msg.sender, value)
 
 
 @view
@@ -316,6 +320,13 @@ def sync(_repayment: uint256):
     #       msg.sender is not an approved strategy and it is called with `_repayment > 0`.
     # NOTE: All approved strategies must have increased diligience around
     #       calling this function, as abnormal behavior could become catastrophic
+
+    # Issue new shares to cover fee
+    # NOTE: In effect, this reduces overall share price by performanceFee
+    fee: uint256 = (_repayment * self.performanceFee) / PERFORMANCE_FEE_MAX
+    self._issueSharesForAmount(self.rewards, fee)
+
+
     creditline: uint256 = 0  # If Emergency shutdown, than always take
     if self.strategies[msg.sender].active and not self.emergencyShutdown:
         # Only in normal operation do we extend a line of credit to the Strategy
