@@ -18,13 +18,18 @@ def gov(accounts):
 
 
 @pytest.fixture
+def rewards(gov):
+    yield gov  # TODO: Add rewards contract
+
+
+@pytest.fixture
 def guardian(accounts):
     yield accounts[2]
 
 
 @pytest.fixture
-def vault(gov, guardian, token, Vault):
-    yield guardian.deploy(Vault, token, gov)
+def vault(gov, rewards, guardian, token, Vault):
+    yield guardian.deploy(Vault, token, gov, rewards)
 
 
 @pytest.fixture
