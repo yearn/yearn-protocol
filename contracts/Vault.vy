@@ -408,23 +408,31 @@ def sync(_return: uint256):
     )
 
     # Update borrow based on delta between credit available and reported earnings
-    # NOTE: This is just used to adjust the balance of tokens based on debtLimit
+    # NOTE: This is just used to adjust the balance of tokens based on the
+    #       adjusted debt limit.
+    # NOTE: credit + self.strategies[msg.sender].totalDebt is always < self.debtLimit
     credit: uint256 = self._creditAvailable(msg.sender)
     if _return < credit:  # credit surplus, give to strategy
         diff: uint256 = credit - _return
         self.token.transfer(msg.sender, diff)
         self.strategies[msg.sender].totalDebt += diff
         self.totalDebt += diff
+
     elif _return > credit:  # credit deficit, take from strategy
         diff: uint256 = _return - credit  # Take the difference
         self.token.transferFrom(msg.sender, self, diff)
-        # NOTE: Cannot return more than you borrowed (after adjusting for returns)
+
+        # NOTE: Cannot return more than you borrowed
+        if diff > self.strategies[msg.sender].totalDebt:
+            diff = self.strategies[msg.sender].totalDebt
+
         self.strategies[msg.sender].totalDebt -= diff
         self.totalDebt -= diff
     # else if matching, don't do anything because it is performing well as is
 
     # Returns are always "realized gains"
     self.strategies[msg.sender].totalReturns += _return
+
     # Update sync time
     self.strategies[msg.sender].lastSync = block.number
 
