@@ -29,26 +29,26 @@ def test_transferFrom(accounts, token, vault, fn_isolation):
 
     # Unapproved can't send
     with brownie.reverts():
-        vault.transferFrom(b, a, vault.balanceOf(b) // 2, {"from": c})
+        vault.transferFrom(a, b, vault.balanceOf(a) // 2, {"from": c})
 
-    vault.approve(c, vault.balanceOf(b) // 2, {"from": b})
-    assert vault.allowance(b, c) == vault.balanceOf(b) // 2
+    vault.approve(c, vault.balanceOf(a) // 2, {"from": a})
+    assert vault.allowance(a, c) == vault.balanceOf(a) // 2
 
     # Can't send more than what is approved
     with brownie.reverts():
-        vault.transferFrom(b, a, vault.balanceOf(b), {"from": c})
+        vault.transferFrom(a, b, vault.balanceOf(a), {"from": c})
 
     assert vault.balanceOf(a) == token.balanceOf(vault)
     assert vault.balanceOf(b) == 0
 
-    vault.transferFrom(b, a, vault.balanceOf(b) // 2, {"from": c})
+    vault.transferFrom(a, b, vault.balanceOf(a) // 2, {"from": c})
 
     assert vault.balanceOf(a) == token.balanceOf(vault) // 2
     assert vault.balanceOf(b) == token.balanceOf(vault) // 2
 
     # If approval is unlimited, little bit of a gas savings
-    vault.approve(c, 2 ** 256 - 1, {"from": b})
-    vault.transferFrom(b, a, vault.balanceOf(b), {"from": c})
+    vault.approve(c, 2 ** 256 - 1, {"from": a})
+    vault.transferFrom(a, b, vault.balanceOf(a), {"from": c})
 
-    assert vault.balanceOf(a) == token.balanceOf(vault)
-    assert vault.balanceOf(b) == 0
+    assert vault.balanceOf(a) == 0
+    assert vault.balanceOf(b) == token.balanceOf(vault)
