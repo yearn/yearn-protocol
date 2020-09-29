@@ -86,7 +86,7 @@ abstract contract BaseStrategy {
     // to accomodate larger variations needed to sustain the strategy's core positon(s)
     uint256 public reserve = 0;
 
-    uint256 public performanceFee = 5000;
+    uint256 public performanceFee = 500;
     uint256 public constant PERFORMANCE_MAX = 10000;
 
     bool public emergencyExit;
