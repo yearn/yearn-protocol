@@ -156,13 +156,24 @@ def approve(_spender : address, _value : uint256) -> bool:
     return True
 
 
+@view
+@internal
+def _totalAssets() -> uint256:
+    return self.token.balanceOf(self) + self.totalDebt
+
+
+@view
+@external
+def totalAssets() -> uint256:
+    return self._totalAssets()
+
+
 @internal
 def _issueSharesForAmount(_to: address, _amount: uint256):
     shares: uint256 = 0
     if self.totalSupply > 0:
         # Mint amount of shares based on what the Vault is managing overall
-        totalAssets: uint256 = self.token.balanceOf(self) + self.totalDebt
-        shares = _amount * self.totalSupply / totalAssets
+        shares = _amount * self.totalSupply / self._totalAssets()
     else:
         # No existing shares, so mint 1:1
         shares = _amount
@@ -186,7 +197,7 @@ def deposit(_amount: uint256):
 @view
 @internal
 def _shareValue(_shares: uint256) -> uint256:
-    return (_shares * (self.token.balanceOf(self) + self.totalDebt)) / self.totalSupply
+    return (_shares * (self._totalAssets())) / self.totalSupply
 
 
 @external
@@ -194,7 +205,7 @@ def withdraw(_maxShares: uint256):
     # Take the lesser of the amount _maxShares is worth, or the amount in the "free" pool
     value: uint256 = min(self._shareValue(_maxShares), self.token.balanceOf(self))
     # Calculate how many shares correspond to that value
-    shares: uint256 = value * self.totalSupply / (self.token.balanceOf(self) + self.totalDebt)
+    shares: uint256 = value * self.totalSupply / self._totalAssets()
     assert value == self._shareValue(shares)  # Sanity check (TODO: Validate unnecessary)
 
     # Burn shares
