@@ -21,6 +21,7 @@ def test_vault_deployment(guardian, gov, rewards, token, Vault):
         ("emergencyShutdown", "setEmergencyShutdown", True),
         ("guardian", "setGuardian", None),
         ("rewards", "setRewards", None),
+        ("performanceFee", "setPerformanceFee", 1000),
     ],
 )
 def test_vault_setParams(
