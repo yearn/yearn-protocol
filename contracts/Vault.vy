@@ -233,6 +233,7 @@ def addStrategy(
 @external
 def updateStrategy(_strategy: address, _debtLimit: uint256, _rateLimit: uint256):
     assert msg.sender == self.governance
+    assert self.strategies[_strategy].activation > 0
     self.strategies[_strategy].debtLimit = _debtLimit
     self.strategies[_strategy].rateLimit = _rateLimit
 
