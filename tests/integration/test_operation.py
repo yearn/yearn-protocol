@@ -46,6 +46,7 @@ def test_normal_operation(
     vault.deposit(token.balanceOf(whale), {"from": whale})
     token.approve(vault, 2 ** 256 - 1, {"from": minnow})
     vault.deposit(token.balanceOf(minnow), {"from": minnow})
+    vault.setDebtLimit(token.totalSupply(), {"from": gov})  # Adjust from 0.1% to 100%
     state_machine(
         NormalOperation, token, vault, gov, andre, minnow, keeper, TestStrategy
     )

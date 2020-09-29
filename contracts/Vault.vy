@@ -50,12 +50,14 @@ event StrategyUpdate:
     debtAdded: uint256
     totalReturn: uint256
     totalDebt: uint256
+    debtLimit: uint256
 
 # NOTE: Track the total for overhead targeting purposes
 strategies: public(HashMap[address, StrategyParams])
 
 emergencyShutdown: public(bool)
 
+debtLimit: public(uint256)  # Debt limit for the Vault across all strategies
 totalDebt: public(uint256)  # Amount of tokens that all strategies have borrowed
 
 rewards: public(address)
@@ -73,6 +75,7 @@ def __init__(_token: address, _governance: address, _rewards: address):
     self.rewards = _rewards
     self.guardian = msg.sender
     self.performanceFee = 500  # 5%
+    self.debtLimit = ERC20(_token).totalSupply() / 1000  # 0.1% of total supply of token
 
 
 # 2-phase commit for a change in governance
@@ -92,6 +95,12 @@ def acceptGovernance():
 def setRewards(_rewards: address):
     assert msg.sender == self.governance
     self.rewards = _rewards
+
+
+@external
+def setDebtLimit(_limit: uint256):
+    assert msg.sender == self.governance
+    self.debtLimit = _limit
 
 
 @external
@@ -204,6 +213,7 @@ def addStrategy(
     _rateLimit: uint256,
 ):
     assert msg.sender == self.governance
+    assert self.totalDebt + _seedCapital <= self.debtLimit
     self.strategies[_strategy] = StrategyParams({
         active: True,
         activation: block.number,
@@ -264,11 +274,14 @@ def _creditAvailable(_strategy: address) -> uint256:
     params: StrategyParams = self.strategies[_strategy]
 
     # Exhausted credit line
-    if params.debtLimit <= params.totalBorrowed:
+    if params.debtLimit <= params.totalDebt or self.debtLimit <= self.totalDebt:
         return 0
 
     # Start with debt limit left for the strategy
     available: uint256 = params.debtLimit - params.totalDebt
+
+    # Adjust by the global debt limit left
+    available = min(available, self.debtLimit - self.totalDebt)
 
     # Adjust by the rate limit algorithm (limits the step size per sync)
     available = min(available, params.rateLimit * (block.number - params.lastSync))

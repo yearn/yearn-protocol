@@ -22,6 +22,7 @@ def test_vault_deployment(guardian, gov, rewards, token, Vault):
         ("guardian", "setGuardian", None),
         ("rewards", "setRewards", None),
         ("performanceFee", "setPerformanceFee", 1000),
+        ("debtLimit", "setDebtLimit", 1000),
     ],
 )
 def test_vault_setParams(
