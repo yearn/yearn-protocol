@@ -13,7 +13,6 @@ class NormalOperation:
         strategy = self.keeper.deploy(self.strategy_template, self.vault, self.gov)
         self.vault.addStrategy(
             strategy,
-            self.token.balanceOf(self.vault) // 5,  # Start w/ 20% of Vault AUM
             self.token.balanceOf(self.vault) // 2,  # Go up to 50% of Vault AUM
             self.token.balanceOf(self.vault) // 1000,  # 0.1% of Vault AUM per block
             {"from": self.gov},

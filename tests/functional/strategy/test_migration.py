@@ -1,13 +1,21 @@
 import brownie
 
 
-def test_good_migration(token, strategy, vault, gov, strategist, TestStrategy, chain):
-    new_strategy = strategist.deploy(TestStrategy, vault, gov)
+def test_good_migration(
+    token, strategy, vault, gov, strategist, rando, TestStrategy, chain
+):
     strategy_debt = vault.strategies(strategy)[4]  # totalDebt
     prior_position = token.balanceOf(strategy)
     assert strategy_debt > 0
+    assert prior_position > 0
+
+    new_strategy = strategist.deploy(TestStrategy, vault, gov)
     assert vault.strategies(new_strategy)[4] == 0
     assert token.balanceOf(new_strategy) == 0
+
+    # Not just anyone can migrate
+    with brownie.reverts():
+        strategy.migrate(new_strategy, {"from": rando})
 
     # Strategist can migrate
     strategy.migrate(new_strategy, {"from": strategist})

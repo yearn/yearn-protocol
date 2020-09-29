@@ -215,24 +215,19 @@ def pricePerShare() -> uint256:
 @external
 def addStrategy(
     _strategy: address,
-    _seedCapital: uint256,
     _debtLimit: uint256,
     _rateLimit: uint256,
 ):
     assert msg.sender == self.governance
-    assert self.totalDebt + _seedCapital <= self.debtLimit
     self.strategies[_strategy] = StrategyParams({
         activation: block.number,
         debtLimit: _debtLimit,
         rateLimit: _rateLimit,
         lastSync: block.number,
-        totalDebt: _seedCapital,
+        totalDebt: 0,
         totalReturns: 0,
     })
-    self.totalDebt += _seedCapital
-    self.token.transfer(_strategy, _seedCapital)
-
-    log StrategyUpdate(_strategy, 0, _seedCapital, 0, _seedCapital, _debtLimit)
+    log StrategyUpdate(_strategy, 0, 0, 0, 0, _debtLimit)
 
 
 @external
