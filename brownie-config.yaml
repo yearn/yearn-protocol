@@ -17,3 +17,9 @@ compiler:
     remappings:
       - "@openzeppelinV2=OpenZeppelin/openzeppelin-contracts@2.5.1"
       - "@openzeppelinV3=OpenZeppelin/openzeppelin-contracts@3.1.0"
+
+reports:
+  exclude_paths:
+    - contracts/test/Token.sol
+  exclude_contracts:
+    - SafeMath
