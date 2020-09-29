@@ -8,6 +8,22 @@ def vault(gov, token, Vault):
     yield gov.deploy(Vault, token, gov, gov)
 
 
+def test_deposit_withdraw(gov, vault, token):
+    balance = token.balanceOf(gov)
+    token.approve(vault, balance, {"from": gov})
+    vault.deposit(balance, {"from": gov})
+
+    assert vault.totalSupply() == token.balanceOf(vault) == balance
+    assert vault.totalDebt() == 0
+    assert vault.pricePerShare() == 10 ** token.decimals()  # 1:1 price
+
+    vault.withdraw(vault.balanceOf(gov), {"from": gov})
+
+    assert vault.totalSupply() == token.balanceOf(vault) == 0
+    assert vault.totalDebt() == 0
+    assert token.balanceOf(gov) == balance
+
+
 def test_transfer(accounts, token, vault, fn_isolation):
     a, b = accounts[0:2]
     token.approve(vault, token.balanceOf(a), {"from": a})
