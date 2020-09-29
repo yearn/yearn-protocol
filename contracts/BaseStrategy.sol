@@ -112,7 +112,7 @@ abstract contract BaseStrategy {
     }
 
     function setStrategist(address _strategist) external {
-        require(msg.sender == governance, "!governance");
+        require(msg.sender == strategist || msg.sender == governance, "!governance");
         strategist = _strategist;
     }
 
