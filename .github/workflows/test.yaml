@@ -1,20 +1,15 @@
 name: Test
 
-on: [push]
-
-env:
-  ETHERSCAN_TOKEN:  ${{ secrets.ETHERSCAN_TOKEN }}
-  WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+      - develop
 
 jobs:
-
-  brownie:
+  functional:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        type: [functional, integration]
 
     steps:
     - uses: actions/checkout@v1
@@ -27,18 +22,38 @@ jobs:
           ~/.vvm
         key: compiler-cache
 
-    - name: Check ETHERSCAN_TOKEN
-      run: |
-        if [ -z "$ETHERSCAN_TOKEN" ] ; then
-          echo "Missing ENV variable ETHERSCAN_TOKEN"
-          exit 1
-        fi
-    - name: Check WEB3_INFURA_PROJECT_ID
-      run: |
-        if [ -z "$WEB3_INFURA_PROJECT_ID" ] ; then
-          echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
-          exit 1
-        fi
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+
+    - name: Install Ganache
+      run: npm install -g ganache-cli@6.10.1
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install Brownie
+      run: pip install -r requirements-dev.txt
+    - name: Compile Code
+      run: brownie compile --size
+
+    - name: Run Tests
+      run: brownie test tests/functional/ --gas --coverage
+
+  integration:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Cache Compiler Installations
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.solcx
+          ~/.vvm
+        key: compiler-cache
 
     - name: Setup Node.js
       uses: actions/setup-node@v1
@@ -55,4 +70,4 @@ jobs:
       run: pip install -r requirements-dev.txt
 
     - name: Run Tests
-      run: brownie test -s --coverage tests/${{ matrix.type }}/
+      run: brownie test tests/integration/ -s
