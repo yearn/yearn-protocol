@@ -162,11 +162,36 @@ abstract contract BaseStrategy {
      */
     function exitPosition() internal virtual;
 
+    /*
+     * Provide a signal to the keeper that `tend()` should be called. The keeper will provide
+     * the estimated gas cost that they would pay to call `tend()`, and this function should
+     * use that estimate to make a determination if calling it is "worth it" for the keeper.
+     * This is not the only consideration into issuing this trigger, for example if the position
+     * would be negatively affected if `tend()` is not called shortly, then this can return `true`
+     * even if the keeper might be "at a loss" (keepers are always reimbursed by yEarn)
+     *
+     * NOTE: this call and `harvestTrigger` should never return `true` at the same time.
+     * NOTE: if `tend()` is never intended to be called, it should always return `false`
+     */
+    function tendTrigger(uint256 gasCost) public virtual view returns (bool);
+
     function tend() external {
         require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance);
         // NOTE: Don't take profits with this call, but adjust for better gains
         adjustPosition();
     }
+
+    /*
+     * Provide a signal to the keeper that `harvest()` should be called. The keeper will provide
+     * the estimated gas cost that they would pay to call `harvest()`, and this function should
+     * use that estimate to make a determination if calling it is "worth it" for the keeper.
+     * This is not the only consideration into issuing this trigger, for example if the position
+     * would be negatively affected if `harvest()` is not called shortly, then this can return `true`
+     * even if the keeper might be "at a loss" (keepers are always reimbursed by yEarn)
+     *
+     * NOTE: this call and `tendTrigger` should never return `true` at the same time.
+     */
+    function harvestTrigger(uint256 gasCost) public virtual view returns (bool);
 
     function harvest() external {
         require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance);

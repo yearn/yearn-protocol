@@ -17,6 +17,26 @@ contract TestStrategy is BaseStrategy {
     // When exiting the position, wait this many times to give everything back
     uint countdownTimer = 3;
 
+    function tendTrigger(uint256 gasCost)
+        public
+        view
+        override
+        returns (bool)
+    {
+        // Dummy function
+        return gasCost == 0;
+    }
+
+    function harvestTrigger(uint256 gasCost)
+        public
+        view
+        override
+        returns (bool)
+    {
+        // Dummy function
+        return gasCost > 0;
+    }
+
     function expectedReturn()
         public
         view
