@@ -58,6 +58,7 @@ strategies: public(HashMap[address, StrategyParams])
 emergencyShutdown: public(bool)
 
 debtLimit: public(uint256)  # Debt limit for the Vault across all strategies
+debtChangeLimit: public(decimal)  # Amount strategy debt limit can change based on return profile
 totalDebt: public(uint256)  # Amount of tokens that all strategies have borrowed
 
 rewards: public(address)
@@ -76,6 +77,7 @@ def __init__(_token: address, _governance: address, _rewards: address):
     self.guardian = msg.sender
     self.performanceFee = 500  # 5%
     self.debtLimit = ERC20(_token).totalSupply() / 1000  # 0.1% of total supply of token
+    self.debtChangeLimit =  0.005  # up to +/- 0.5% change allowed for strategy debt limits
 
 
 # 2-phase commit for a change in governance
@@ -101,6 +103,12 @@ def setRewards(_rewards: address):
 def setDebtLimit(_limit: uint256):
     assert msg.sender == self.governance
     self.debtLimit = _limit
+
+
+@external
+def setDebtChangeLimit(_limit: decimal):
+    assert msg.sender == self.governance
+    self.debtChangeLimit = _limit
 
 
 @external
@@ -226,7 +234,7 @@ def addStrategy(
     self.totalDebt += _seedCapital
     self.token.transfer(_strategy, _seedCapital)
 
-    log StrategyUpdate(_strategy, 0, _seedCapital, 0, _seedCapital)
+    log StrategyUpdate(_strategy, 0, _seedCapital, 0, _seedCapital, _debtLimit)
 
 
 @external
@@ -355,6 +363,13 @@ def sync(_return: uint256):
         self.totalDebt -= diff
     # else if matching, don't do anything because it is performing well as is
 
+    # Adjust future debt limit based on current return vs. past performance
+    expected_return: uint256 = self._expectedReturn(msg.sender)
+    debtMultiplier: decimal = convert(_return, decimal) / convert(expected_return, decimal)
+    newDebtLimit: decimal = convert(self.strategies[msg.sender].debtLimit, decimal)
+    newDebtLimit *= max(min(1.0 + self.debtChangeLimit, debtMultiplier), 1.0 - self.debtChangeLimit)
+    self.strategies[msg.sender].debtLimit = convert(newDebtLimit, uint256)
+
     # Returns are always "realized gains"
     self.strategies[msg.sender].totalReturns += _return
     # Update sync time
@@ -366,4 +381,5 @@ def sync(_return: uint256):
         credit,
         self.strategies[msg.sender].totalReturns,
         self.strategies[msg.sender].totalDebt,
+        self.strategies[msg.sender].debtLimit,
     )

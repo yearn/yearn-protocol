@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 import brownie
 
@@ -23,6 +25,7 @@ def test_vault_deployment(guardian, gov, rewards, token, Vault):
         ("rewards", "setRewards", None),
         ("performanceFee", "setPerformanceFee", 1000),
         ("debtLimit", "setDebtLimit", 1000),
+        ("debtChangeLimit", "setDebtChangeLimit", Decimal("0.1")),
     ],
 )
 def test_vault_setParams(
