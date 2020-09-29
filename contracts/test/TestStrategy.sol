@@ -43,7 +43,7 @@ contract TestStrategy is BaseStrategy {
         override
         returns (uint256 er)
     {
-        (,,,,,, er) = vault.strategies(address(this));
+        (,,,,, er) = vault.strategies(address(this));
     }
 
     function prepareReturn()

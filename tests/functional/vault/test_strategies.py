@@ -16,11 +16,10 @@ def test_addStrategy(web3, gov, token, rando, Vault, TestStrategy):
         vault.addStrategy(strategy, 100, 1000, 10, {"from": gov})
 
     token.transfer(vault, 100, {"from": gov})  # addStrategy requires tokens
-    assert vault.strategies(strategy) == [False, 0, 0, 0, 0, 0, 0]
+    assert vault.strategies(strategy) == [0, 0, 0, 0, 0, 0]
 
     vault.addStrategy(strategy, 100, 1000, 10, {"from": gov})
     assert vault.strategies(strategy) == [
-        True,
         web3.eth.blockNumber,
         1000,
         10,
@@ -40,7 +39,6 @@ def test_updateStrategy(web3, gov, vault, strategy, rando):
 
     vault.updateStrategy(strategy, 1500, 15, {"from": gov})
     assert vault.strategies(strategy) == [
-        True,
         activation_block,
         1500,
         15,
@@ -60,7 +58,6 @@ def test_revokeStrategy(web3, gov, vault, strategy, rando):
 
     vault.revokeStrategy(strategy, {"from": gov})
     assert vault.strategies(strategy) == [
-        True,
         activation_block,
         0,
         1,

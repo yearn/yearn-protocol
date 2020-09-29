@@ -36,7 +36,6 @@ guardian: public(address)
 pendingGovernance: address
 
 struct StrategyParams:
-    active: bool
     activation: uint256  # Activation block.number
     debtLimit: uint256  # Maximum borrow amount
     rateLimit: uint256  # Increase/decrease per block
@@ -223,7 +222,6 @@ def addStrategy(
     assert msg.sender == self.governance
     assert self.totalDebt + _seedCapital <= self.debtLimit
     self.strategies[_strategy] = StrategyParams({
-        active: True,
         activation: block.number,
         debtLimit: _debtLimit,
         rateLimit: _rateLimit,
@@ -251,8 +249,8 @@ def migrateStrategy(_newVersion: address):
     NOTE: Strategy must successfully migrate all capital and positions to
           new Strategy, or else this will upset the balance of the Vault
     """
-    assert self.strategies[msg.sender].active
-    assert not self.strategies[_newVersion].active
+    assert self.strategies[msg.sender].activation > 0
+    assert self.strategies[_newVersion].activation == 0
     strategy: StrategyParams = self.strategies[msg.sender]
     self.strategies[msg.sender] = empty(StrategyParams)
     self.strategies[_newVersion] = strategy
@@ -387,7 +385,7 @@ def sync(_return: uint256):
     #       calling this function, as abnormal behavior could become catastrophic
 
     # Only approved strategies can call this function
-    assert self.strategies[msg.sender].active
+    assert self.strategies[msg.sender].activation > 0
 
     # Issue new shares to cover fee (if strategy is not shutting down)
     # NOTE: In effect, this reduces overall share price by performanceFee
