@@ -328,6 +328,49 @@ def expectedReturn(_strategy: address = msg.sender) -> uint256:
     return self._expectedReturn(_strategy)
 
 
+@view
+@internal
+def _adjustedDebtLimit(
+    _currDebtLimit: decimal,
+    _actual: decimal,
+    _expected: decimal,
+) -> decimal:
+    if _currDebtLimit == 0.0:
+        return 0.0
+
+    if _expected == 0.0:
+        return _currDebtLimit
+
+    maxRatio: decimal = 1.0 + self.debtChangeLimit
+    minRatio: decimal = 1.0 - self.debtChangeLimit
+
+    # Check if saturated first, to avoid overflow errors
+    if _actual > maxRatio * _expected:
+        return maxRatio * _currDebtLimit
+
+    elif _actual < minRatio * _expected:
+        return minRatio * _currDebtLimit
+
+    else:
+        return _currDebtLimit * (_actual / _expected)
+
+
+@view
+@external
+def estimateAdjustedDebtLimit(
+    _estimatedReturn: uint256,
+    _strategy: address = msg.sender,
+) -> uint256:
+    return convert(
+        self._adjustedDebtLimit(
+            convert(self.strategies[_strategy].debtLimit, decimal),
+            convert(_estimatedReturn, decimal),
+            convert(self._expectedReturn(_strategy), decimal),
+        ),
+        uint256,
+    )
+
+
 @external
 def sync(_return: uint256):
     """
@@ -355,11 +398,14 @@ def sync(_return: uint256):
 
     # Adjust debt limit based on current return vs. past performance
     # NOTE: This must be called at the exact moment a return is "realized"
-    expected_return: uint256 = self._expectedReturn(msg.sender)
-    debtMultiplier: decimal = convert(_return, decimal) / convert(expected_return, decimal)
-    newDebtLimit: decimal = convert(self.strategies[msg.sender].debtLimit, decimal)
-    newDebtLimit *= max(min(1.0 + self.debtChangeLimit, debtMultiplier), 1.0 - self.debtChangeLimit)
-    self.strategies[msg.sender].debtLimit = convert(newDebtLimit, uint256)
+    self.strategies[msg.sender].debtLimit = convert(
+        self._adjustedDebtLimit(
+            convert(self.strategies[msg.sender].debtLimit, decimal),
+            convert(_return, decimal),
+            convert(self._expectedReturn(msg.sender), decimal),
+        ),
+        uint256,
+    )
 
     # Update borrow based on delta between credit available and reported earnings
     # NOTE: This is just used to adjust the balance of tokens based on debtLimit
