@@ -41,7 +41,7 @@ struct StrategyParams:
     debtLimit: uint256  # Maximum borrow amount
     rateLimit: uint256  # Increase/decrease per block
     lastSync: uint256  # block.number of the last time a sync occured
-    totalBorrowed: uint256
+    totalDebt: uint256
     totalReturns: uint256
 
 event StrategyUpdate:
@@ -49,12 +49,14 @@ event StrategyUpdate:
     returnAdded: uint256
     debtAdded: uint256
     totalReturn: uint256
-    totalBorrowed: uint256
+    totalDebt: uint256
 
-borrowed: public(uint256)  # Amount of tokens that all strategies have borrowed
 # NOTE: Track the total for overhead targeting purposes
 strategies: public(HashMap[address, StrategyParams])
+
 emergencyShutdown: public(bool)
+
+totalDebt: public(uint256)  # Amount of tokens that all strategies have borrowed
 
 rewards: public(address)
 performanceFee: public(uint256)
@@ -143,7 +145,7 @@ def _issueSharesForAmount(_to: address, _amount: uint256):
     shares: uint256 = 0
     if self.totalSupply > 0:
         # Mint amount of shares based on what the Vault is managing overall
-        totalAssets: uint256 = self.token.balanceOf(self) + self.borrowed
+        totalAssets: uint256 = self.token.balanceOf(self) + self.totalDebt
         shares = (_amount / totalAssets) * self.totalSupply
     else:
         # No existing shares, so mint 1:1
@@ -168,7 +170,7 @@ def deposit(_amount: uint256):
 @view
 @internal
 def _shareValue(_shares: uint256) -> uint256:
-    return (_shares * (self.token.balanceOf(self) + self.borrowed)) / self.totalSupply
+    return (_shares * (self.token.balanceOf(self) + self.totalDebt)) / self.totalSupply
 
 
 @external
@@ -176,7 +178,7 @@ def withdraw(_maxShares: uint256):
     # Take the lesser of the amount _maxShares is worth, or the amount in the "free" pool
     value: uint256 = min(self._shareValue(_maxShares), self.token.balanceOf(self))
     # Calculate how many shares correspond to that value
-    shares: uint256 = value * self.totalSupply / (self.token.balanceOf(self) + self.borrowed)
+    shares: uint256 = value * self.totalSupply / (self.token.balanceOf(self) + self.totalDebt)
     assert value == self._shareValue(shares)  # Sanity check (TODO: Validate unnecessary)
 
     # Burn shares
@@ -208,10 +210,10 @@ def addStrategy(
         debtLimit: _debtLimit,
         rateLimit: _rateLimit,
         lastSync: block.number,
-        totalBorrowed: _seedCapital,
+        totalDebt: _seedCapital,
         totalReturns: 0,
     })
-    self.borrowed += _seedCapital
+    self.totalDebt += _seedCapital
     self.token.transfer(_strategy, _seedCapital)
 
     log StrategyUpdate(_strategy, 0, _seedCapital, 0, _seedCapital)
@@ -265,8 +267,8 @@ def _creditAvailable(_strategy: address) -> uint256:
     if params.debtLimit <= params.totalBorrowed:
         return 0
 
-    # Start with debt limit left
-    available: uint256 = params.debtLimit - params.totalBorrowed
+    # Start with debt limit left for the strategy
+    available: uint256 = params.debtLimit - params.totalDebt
 
     # Adjust by the rate limit algorithm (limits the step size per sync)
     available = min(available, params.rateLimit * (block.number - params.lastSync))
@@ -330,14 +332,14 @@ def sync(_return: uint256):
     if _return < credit:  # credit surplus, give to strategy
         diff: uint256 = credit - _return
         self.token.transfer(msg.sender, diff)
-        self.strategies[msg.sender].totalBorrowed += credit
-        self.borrowed += credit
+        self.strategies[msg.sender].totalDebt += credit
+        self.totalDebt += credit
     elif _return > credit:  # credit deficit, take from strategy
         diff: uint256 = _return - credit  # Take the difference
         self.token.transferFrom(msg.sender, self, diff)
         # NOTE: Cannot return more than you borrowed (after adjusting for returns)
-        self.strategies[msg.sender].totalBorrowed -= diff
-        self.borrowed -= diff
+        self.strategies[msg.sender].totalDebt -= diff
+        self.totalDebt -= diff
     # else if matching, don't do anything because it is performing well as is
 
     # Returns are always "realized gains"
@@ -350,5 +352,5 @@ def sync(_return: uint256):
         _return,
         credit,
         self.strategies[msg.sender].totalReturns,
-        self.strategies[msg.sender].totalBorrowed,
+        self.strategies[msg.sender].totalDebt,
     )

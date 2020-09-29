@@ -28,7 +28,7 @@ class NormalOperation:
         self.token.transfer(strategy, amt, {"from": self.mint})
 
     def invariant_accounting(self):
-        assert self.vault.borrowed() == sum(
+        assert self.vault.totalDebt() == sum(
             self.token.balanceOf(s) for s in self.strategies
         )
 
