@@ -353,6 +353,14 @@ def sync(_return: uint256):
         fee: uint256 = (_return * self.performanceFee) / PERFORMANCE_FEE_MAX
         self._issueSharesForAmount(self.rewards, fee)
 
+    # Adjust debt limit based on current return vs. past performance
+    # NOTE: This must be called at the exact moment a return is "realized"
+    expected_return: uint256 = self._expectedReturn(msg.sender)
+    debtMultiplier: decimal = convert(_return, decimal) / convert(expected_return, decimal)
+    newDebtLimit: decimal = convert(self.strategies[msg.sender].debtLimit, decimal)
+    newDebtLimit *= max(min(1.0 + self.debtChangeLimit, debtMultiplier), 1.0 - self.debtChangeLimit)
+    self.strategies[msg.sender].debtLimit = convert(newDebtLimit, uint256)
+
     # Update borrow based on delta between credit available and reported earnings
     # NOTE: This is just used to adjust the balance of tokens based on debtLimit
     credit: uint256 = self._creditAvailable(msg.sender)
@@ -368,13 +376,6 @@ def sync(_return: uint256):
         self.strategies[msg.sender].totalDebt -= diff
         self.totalDebt -= diff
     # else if matching, don't do anything because it is performing well as is
-
-    # Adjust future debt limit based on current return vs. past performance
-    expected_return: uint256 = self._expectedReturn(msg.sender)
-    debtMultiplier: decimal = convert(_return, decimal) / convert(expected_return, decimal)
-    newDebtLimit: decimal = convert(self.strategies[msg.sender].debtLimit, decimal)
-    newDebtLimit *= max(min(1.0 + self.debtChangeLimit, debtMultiplier), 1.0 - self.debtChangeLimit)
-    self.strategies[msg.sender].debtLimit = convert(newDebtLimit, uint256)
 
     # Returns are always "realized gains"
     self.strategies[msg.sender].totalReturns += _return
