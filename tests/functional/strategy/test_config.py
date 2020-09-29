@@ -38,6 +38,23 @@ def test_vault_setStrategist(strategy, gov, strategist, rando):
     assert strategy.strategist() == strategist
 
 
+def test_vault_setKeeper(strategy, gov, strategist, rando):
+    # Only governance or strategist can set this param
+    with brownie.reverts():
+        strategy.setKeeper(rando, {"from": rando})
+    assert strategy.keeper() != rando
+
+    strategy.setKeeper(rando, {"from": gov})
+    assert strategy.keeper() == rando
+
+    # Only governance or strategist can set this param
+    with brownie.reverts():
+        strategy.setKeeper(rando, {"from": rando})
+
+    strategy.setKeeper(strategist, {"from": strategist})
+    assert strategy.keeper() == strategist
+
+
 def test_strategy_setEmergencyExit(strategy, gov, strategist, rando, chain):
     # Only governance or strategist can set this param
     with brownie.reverts():
