@@ -7,15 +7,18 @@ import "@openzeppelinV3/contracts/math/SafeMath.sol";
 interface VaultAPI {
     function token() external view returns (address);
 
-    function strategies(address _strategy) external view returns (
-        bool active,
-        uint256 activation,
-        uint256 debtLimit,
-        uint256 rateLimit,
-        uint256 lastSync,
-        uint256 totalBorrowed,
-        uint256 totalReturns
-    );
+    function strategies(address _strategy)
+        external
+        view
+        returns (
+            bool active,
+            uint256 activation,
+            uint256 debtLimit,
+            uint256 rateLimit,
+            uint256 lastSync,
+            uint256 totalBorrowed,
+            uint256 totalReturns
+        );
 
     /*
      * View how much the Vault would increase this strategy's borrow limit,
@@ -91,7 +94,7 @@ abstract contract BaseStrategy {
     constructor(address _vault, address _governance) public {
         vault = VaultAPI(_vault);
         want = IERC20(vault.token());
-        want.approve(_vault, uint(-1)); // Give Vault unlimited access (might save gas)
+        want.approve(_vault, uint256(-1)); // Give Vault unlimited access (might save gas)
         strategist = msg.sender;
         keeper = msg.sender;
         governance = _governance;
@@ -174,10 +177,7 @@ abstract contract BaseStrategy {
         } else {
             prepareReturn(); // Free up returns for Vault to pull
             // Send strategist their performance fee
-            uint256 _fee = want.balanceOf(address(this))
-                .sub(reserve)
-                .mul(performanceFee)
-                .div(PERFORMANCE_MAX);
+            uint256 _fee = want.balanceOf(address(this)).sub(reserve).mul(performanceFee).div(PERFORMANCE_MAX);
             want.transfer(strategist, _fee);
         }
 
