@@ -163,7 +163,7 @@ def _issueSharesForAmount(_to: address, _amount: uint256):
     if self.totalSupply > 0:
         # Mint amount of shares based on what the Vault is managing overall
         totalAssets: uint256 = self.token.balanceOf(self) + self.totalDebt
-        shares = (_amount / totalAssets) * self.totalSupply
+        shares = _amount * self.totalSupply / totalAssets
     else:
         # No existing shares, so mint 1:1
         shares = _amount
