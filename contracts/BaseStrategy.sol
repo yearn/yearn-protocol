@@ -196,6 +196,7 @@ abstract contract BaseStrategy {
 
     function migrate(address _newStrategy) external {
         require(msg.sender == strategist || msg.sender == governance);
+        require(BaseStrategy(_newStrategy).vault() == vault);
         prepareMigration(_newStrategy);
         vault.migrateStrategy(_newStrategy);
     }
