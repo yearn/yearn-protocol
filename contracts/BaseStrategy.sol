@@ -181,6 +181,9 @@ abstract contract BaseStrategy {
             want.transfer(strategist, _fee);
         }
 
+        if (reserve > want.balanceOf(address(this)))
+            reserve = want.balanceOf(address(this));
+
         // Allow Vault to take up to the "free" balance of this contract
         vault.sync(want.balanceOf(address(this)).sub(reserve));
 
@@ -206,6 +209,8 @@ abstract contract BaseStrategy {
         emergencyExit = true;
         exitPosition();
         vault.revokeStrategy();
+        if (reserve > want.balanceOf(address(this)))
+            reserve = want.balanceOf(address(this));
         vault.sync(want.balanceOf(address(this)).sub(reserve));
     }
 }
