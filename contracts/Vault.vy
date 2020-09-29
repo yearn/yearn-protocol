@@ -200,13 +200,23 @@ def _shareValue(_shares: uint256) -> uint256:
     return (_shares * (self._totalAssets())) / self.totalSupply
 
 
+@view
+@internal
+def _maxAvailableShares() -> uint256:
+    return (self.token.balanceOf(self) * self.totalSupply) / self._totalAssets()
+
+
+@view
+@external
+def maxAvailableShares() -> uint256:
+    return self._maxAvailableShares()
+
+
 @external
 def withdraw(_maxShares: uint256):
-    # Take the lesser of the amount _maxShares is worth, or the amount in the "free" pool
-    value: uint256 = min(self._shareValue(_maxShares), self.token.balanceOf(self))
-    # Calculate how many shares correspond to that value
-    shares: uint256 = value * self.totalSupply / self._totalAssets()
-    assert value == self._shareValue(shares)  # Sanity check (TODO: Validate unnecessary)
+    # Take the lesser of _maxShares, or the "free" amount of outstanding shares
+    shares: uint256 = min(_maxShares, self._maxAvailableShares())
+    value: uint256 = self._shareValue(shares)
 
     # Burn shares
     self.totalSupply -= shares
