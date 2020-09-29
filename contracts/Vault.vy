@@ -93,7 +93,7 @@ def setRewards(_rewards: address):
 
 
 @external
-def setManagementFee(_fee: uint256):
+def setPerformanceFee(_fee: uint256):
     assert msg.sender == self.governance
     self.performanceFee = _fee
 
