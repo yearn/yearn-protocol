@@ -279,20 +279,23 @@ def _creditAvailable(_strategy: address) -> uint256:
     if self.emergencyShutdown:
         return 0
 
-    params: StrategyParams = self.strategies[_strategy]
+    strategy_debtLimit: uint256 = self.strategies[_strategy].debtLimit
+    strategy_totalDebt: uint256 = self.strategies[_strategy].totalDebt
+    strategy_rateLimit: uint256 = self.strategies[_strategy].rateLimit
+    strategy_lastSync: uint256 = self.strategies[_strategy].lastSync
 
     # Exhausted credit line
-    if params.debtLimit <= params.totalDebt or self.debtLimit <= self.totalDebt:
+    if strategy_debtLimit <= strategy_totalDebt or self.debtLimit <= self.totalDebt:
         return 0
 
     # Start with debt limit left for the strategy
-    available: uint256 = params.debtLimit - params.totalDebt
+    available: uint256 = strategy_debtLimit - strategy_totalDebt
 
     # Adjust by the global debt limit left
     available = min(available, self.debtLimit - self.totalDebt)
 
     # Adjust by the rate limit algorithm (limits the step size per sync)
-    available = min(available, params.rateLimit * (block.number - params.lastSync))
+    available = min(available, strategy_rateLimit * (block.number - strategy_lastSync))
 
     # Can only borrow up to what the contract has in reserve
     # NOTE: Running near 100% is discouraged
@@ -308,12 +311,15 @@ def creditAvailable(_strategy: address = msg.sender) -> uint256:
 @view
 @internal
 def _expectedReturn(_strategy: address) -> uint256:
-    params: StrategyParams = self.strategies[_strategy]
-    blockDelta: uint256 = (block.number - params.lastSync)
+    strategy_lastSync: uint256 = self.strategies[_strategy].lastSync
+    strategy_totalReturns: uint256 = self.strategies[_strategy].totalReturns
+    strategy_activation: uint256 = self.strategies[_strategy].activation
+
+    blockDelta: uint256 = (block.number - strategy_lastSync)
     if blockDelta > 0:
-        return (params.totalReturns * blockDelta) / (block.number - params.activation)
+        return (strategy_totalReturns * blockDelta) / (block.number - strategy_activation)
     else:
-        return 0  # Covers the scenario when block.number == params.activation
+        return 0  # Covers the scenario when block.number == strategy_activation
 
 
 @view
