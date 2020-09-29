@@ -29,24 +29,25 @@ def test_vault_deployment(guardian, gov, rewards, token, Vault):
     ],
 )
 def test_vault_setParams(
-    accounts, guardian, gov, rewards, token, getter, setter, val, Vault
+    guardian, gov, rewards, token, rando, getter, setter, val, Vault
 ):
     if not val:
-        # Can't access fixtures, so use None to mean an address literal
-        val = accounts[9]
+        # Can't access fixtures, so use None to mean any random address
+        val = rando
 
     vault = guardian.deploy(Vault, token, gov, rewards)
 
     # Only governance can set this param
     with brownie.reverts():
-        getattr(vault, setter)(val, {"from": accounts[1]})
+        getattr(vault, setter)(val, {"from": rando})
+
     getattr(vault, setter)(val, {"from": gov})
     assert getattr(vault, getter)() == val
 
 
-def test_vault_setGovernance(accounts, guardian, gov, rewards, token, Vault):
+def test_vault_setGovernance(guardian, gov, rewards, token, rando, Vault):
     vault = guardian.deploy(Vault, token, gov, rewards)
-    newGov = accounts[9]
+    newGov = rando
     # No one can set governance but governance
     with brownie.reverts():
         vault.setGovernance(newGov, {"from": newGov})

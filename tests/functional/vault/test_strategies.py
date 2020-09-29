@@ -2,21 +2,6 @@ import pytest
 import brownie
 
 
-@pytest.fixture
-def vault(gov, token, Vault):
-    yield gov.deploy(Vault, token, gov, gov)
-
-
-@pytest.fixture
-def strategy(gov, vault, TestStrategy):
-    yield gov.deploy(TestStrategy, vault, gov)
-
-
-@pytest.fixture
-def rando(accounts):
-    yield accounts[9]
-
-
 def test_strategy_config(web3, gov, token, vault, strategy, rando):
 
     token.transfer(vault, 100, {"from": gov})  # addStrategy requires tokens

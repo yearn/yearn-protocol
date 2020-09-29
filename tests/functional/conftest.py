@@ -19,3 +19,28 @@ def guardian(accounts):
 @pytest.fixture
 def token(gov, Token):
     yield gov.deploy(Token)
+
+
+@pytest.fixture
+def vault(gov, guardian, token, rewards, Vault):
+    yield guardian.deploy(Vault, token, gov, rewards)
+
+
+@pytest.fixture
+def strategist(accounts):
+    yield accounts[3]
+
+
+@pytest.fixture
+def keeper(accounts):
+    yield accounts[4]
+
+
+@pytest.fixture
+def strategy(gov, vault, TestStrategy):
+    yield gov.deploy(TestStrategy, vault, gov)
+
+
+@pytest.fixture
+def rando(accounts):
+    yield accounts[9]
