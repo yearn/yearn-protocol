@@ -332,8 +332,8 @@ def sync(_return: uint256):
     if _return < credit:  # credit surplus, give to strategy
         diff: uint256 = credit - _return
         self.token.transfer(msg.sender, diff)
-        self.strategies[msg.sender].totalDebt += credit
-        self.totalDebt += credit
+        self.strategies[msg.sender].totalDebt += diff
+        self.totalDebt += diff
     elif _return > credit:  # credit deficit, take from strategy
         diff: uint256 = _return - credit  # Take the difference
         self.token.transferFrom(msg.sender, self, diff)
