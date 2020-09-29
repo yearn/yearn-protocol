@@ -9,12 +9,12 @@ interface VaultAPI {
 
     function strategies(address _strategy) external view returns (
         bool active,
-        uint256 blockAdded,
-        fixed160x10 starting,
+        uint256 activation,
         uint256 debtLimit,
-        fixed160x10 blockGain,
-        uint256 amountBorrowed,
-        uint256 currentReturn
+        uint256 rateLimit,
+        uint256 lastSync,
+        uint256 totalBorrowed,
+        uint256 totalReturns
     );
 
     /*
@@ -22,7 +22,14 @@ interface VaultAPI {
      * based on it's present performance (since last sync). Can be used to
      * determine expectedReturn in your strategy.
      */
-    function availableForStrategy() external view returns (uint256);
+    function creditAvailable() external view returns (uint256);
+
+    /*
+     * View how much the Vault expect this strategy to return at the current block,
+     * based on it's present performance (since last sync). Can be used to
+     * determine expectedReturn in your strategy.
+     */
+    function expectedReturn() external view returns (uint256);
 
     /*
      * This is the main contact point where the strategy interacts with the Vault.
@@ -126,17 +133,30 @@ abstract contract BaseStrategy {
     /*
      * Perform any strategy unwinding or other calls necessary to capture
      * the "free return" this strategy has generated since the last time it's
-     * core position(s) were adusted.
+     * core position(s) were adusted. Examples include unwrapping extra rewards.
+     * This call is only used during "normal operation" of a Strategy, and should
+     * be optimized to minimize losses as much as possible. It is okay to report
+     * "no returns", however this will affect the credit limit extended to the
+     * strategy and reduce it's overall position if lower than expected returns
+     * are sustained for long periods of time.
      */
     function prepareReturn() internal virtual;
 
     /*
      * Perform any adjustments to the core position(s) of this strategy given
      * what change the Vault made in the "free return" available to the strategy.
-     * Note that all "free returns" in the strategy
+     * Note that all "free returns" in the strategy after the sync are available
+     * for reinvestment. Also note that this number could be 0, and you should
+     * handle that scenario accordingly.
      */
     function adjustPosition() internal virtual;
 
+    /*
+     * Make as much capital as possible "free" for the Vault to take. Some slippage
+     * is allowed, since when this method is called the strategist is no longer receiving
+     * their performance fee. The goal is for the strategy to divest as quickly as possible
+     * while not suffering exorbitant losses. This function is used instead of prepareReturn()
+     */
     function exitPosition() internal virtual;
 
     function tend() external {
@@ -168,6 +188,10 @@ abstract contract BaseStrategy {
         // TODO: Could move fee calculation here, would actually bias more towards growth
     }
 
+    /*
+     * Do anything necesseary to prepare this strategy for migration, such
+     * as transfering any reserve or LP tokens, CDPs, or other tokens or stores of value.
+     */
     function prepareMigration(address _newStrategy) internal virtual;
 
     function migrate(address _newStrategy) external {

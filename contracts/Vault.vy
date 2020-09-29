@@ -37,12 +37,12 @@ pendingGovernance: address
 
 struct StrategyParams:
     active: bool
-    blockAdded: uint256
-    starting: decimal
-    debtLimit: uint256
-    blockGain: decimal
-    borrowed: uint256
-    returns: uint256
+    activation: uint256  # Activation block.number
+    debtLimit: uint256  # Maximum borrow amount
+    rateLimit: uint256  # Increase/decrease per block
+    lastSync: uint256  # block.number of the last time a sync occured
+    totalBorrowed: uint256
+    totalReturns: uint256
 
 event StrategyUpdate:
     strategy: indexed(address)
@@ -197,32 +197,31 @@ def pricePerShare() -> uint256:
 @external
 def addStrategy(
     _strategy: address,
-    _startingCapital: uint256,
-    _debtLimitCapital: uint256,
-    _fadeIn: uint256,  # blocks
+    _seedCapital: uint256,
+    _debtLimit: uint256,
+    _rateLimit: uint256,
 ):
     assert msg.sender == self.governance
-    starting: decimal = convert(_startingCapital, decimal)
-    debtLimit: decimal = convert(_debtLimitCapital, decimal)
     self.strategies[_strategy] = StrategyParams({
         active: True,
-        blockAdded: block.number,
-        starting: starting,
-        debtLimit: _debtLimitCapital,
-        blockGain: (debtLimit - starting) / convert(_fadeIn, decimal),
-        borrowed: _startingCapital,
-        returns: 0,
+        activation: block.number,
+        debtLimit: _debtLimit,
+        rateLimit: _rateLimit,
+        lastSync: block.number,
+        totalBorrowed: _seedCapital,
+        totalReturns: 0,
     })
-    self.borrowed += _startingCapital
-    self.token.transfer(_strategy, _startingCapital)
+    self.borrowed += _seedCapital
+    self.token.transfer(_strategy, _seedCapital)
 
-    log StrategyUpdate(_strategy, 0, _startingCapital, 0, _startingCapital)
+    log StrategyUpdate(_strategy, 0, _seedCapital, 0, _seedCapital)
 
 
 @external
-def updateStrategy(_strategy: address, _debtLimit: uint256):
+def updateStrategy(_strategy: address, _debtLimit: uint256, _rateLimit: uint256):
     assert msg.sender == self.governance
     self.strategies[_strategy].debtLimit = _debtLimit
+    self.strategies[_strategy].rateLimit = _rateLimit
 
 
 @external
@@ -253,29 +252,51 @@ def revokeStrategy(_strategy: address = msg.sender):
 
 @view
 @internal
-def _available(_strategy: address) -> uint256:
+def _creditAvailable(_strategy: address) -> uint256:
     """
     Amount of tokens in vault a strategy has access to as a credit line
     """
     if self.emergencyShutdown:
         return 0
+
     params: StrategyParams = self.strategies[_strategy]
-    # Reserves available
-    available: decimal = convert(self.token.balanceOf(self), decimal)
-    # Adjust by % borrowed (vs. debt limit for strategy)
-    available *= (convert(params.debtLimit, decimal) - convert(params.borrowed, decimal)) / convert(params.borrowed, decimal)
-    # Adjust by initial rate limiting algorithm
-    available *= min(
-        params.starting + params.blockGain * convert((block.number - params.blockAdded), decimal),
-        convert(params.debtLimit, decimal),  # 0 when a strategy is revoked
-    )
-    return convert(available, uint256)
+
+    # Exhausted credit line
+    if params.debtLimit <= params.totalBorrowed:
+        return 0
+
+    # Start with debt limit left
+    available: uint256 = params.debtLimit - params.totalBorrowed
+
+    # Adjust by the rate limit algorithm (limits the step size per sync)
+    available = min(available, params.rateLimit * (block.number - params.lastSync))
+
+    # Can only borrow up to what the contract has in reserve
+    # NOTE: Running near 100% is discouraged
+    return min(available, self.token.balanceOf(self))
 
 
 @view
 @external
-def availableForStrategy(_strategy: address = msg.sender) -> uint256:
-    return self._available(_strategy)
+def creditAvailable(_strategy: address = msg.sender) -> uint256:
+    return self._creditAvailable(_strategy)
+
+
+@view
+@internal
+def _expectedReturn(_strategy: address) -> uint256:
+    params: StrategyParams = self.strategies[_strategy]
+    blockDelta: uint256 = (block.number - params.lastSync)
+    if blockDelta > 0:
+        return (params.totalReturns * blockDelta) / (block.number - params.activation)
+    else:
+        return 0  # Covers the scenario when block.number == params.activation
+
+
+@view
+@external
+def expectedReturn(_strategy: address = msg.sender) -> uint256:
+    return self._expectedReturn(_strategy)
 
 
 @external
@@ -296,34 +317,38 @@ def sync(_return: uint256):
     # Only approved strategies can call this function
     assert self.strategies[msg.sender].active
 
-    # Issue new shares to cover fee (if strategy is active)
+    # Issue new shares to cover fee (if strategy is not shutting down)
     # NOTE: In effect, this reduces overall share price by performanceFee
     # NOTE: No fee is taken when a strategy is unwinding it's position
     if self.strategies[msg.sender].debtLimit > 0:
         fee: uint256 = (_return * self.performanceFee) / PERFORMANCE_FEE_MAX
         self._issueSharesForAmount(self.rewards, fee)
 
-    creditline: uint256 = self._available(msg.sender)
-    if _return < creditline:  # Underperforming, give a boost
-        diff: uint256 = creditline - _return  # Give the difference
+    # Update borrow based on delta between credit available and reported earnings
+    # NOTE: This is just used to adjust the balance of tokens based on debtLimit
+    credit: uint256 = self._creditAvailable(msg.sender)
+    if _return < credit:  # credit surplus, give to strategy
+        diff: uint256 = credit - _return
         self.token.transfer(msg.sender, diff)
-        self.strategies[msg.sender].borrowed += diff
-        self.borrowed += diff
-    elif _return > creditline:  # Overperforming, take a cut
-        diff: uint256 = _return - creditline  # Take the difference
+        self.strategies[msg.sender].totalBorrowed += credit
+        self.borrowed += credit
+    elif _return > credit:  # credit deficit, take from strategy
+        diff: uint256 = _return - credit  # Take the difference
         self.token.transferFrom(msg.sender, self, diff)
         # NOTE: Cannot return more than you borrowed (after adjusting for returns)
-        self.strategies[msg.sender].borrowed -= diff
+        self.strategies[msg.sender].totalBorrowed -= diff
         self.borrowed -= diff
     # else if matching, don't do anything because it is performing well as is
 
     # Returns are always "realized gains"
-    self.strategies[msg.sender].returns += _return
+    self.strategies[msg.sender].totalReturns += _return
+    # Update sync time
+    self.strategies[msg.sender].lastSync = block.number
 
     log StrategyUpdate(
         msg.sender,
         _return,
-        creditline,
-        self.strategies[msg.sender].returns,
-        self.strategies[msg.sender].borrowed,
+        credit,
+        self.strategies[msg.sender].totalReturns,
+        self.strategies[msg.sender].totalBorrowed,
     )
