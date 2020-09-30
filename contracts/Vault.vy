@@ -454,20 +454,21 @@ def sync(_return: uint256):
         self.strategies[msg.sender].totalReturns += _return
 
     elif _return > 0:  # We're repaying debt now
-        debtPayment: uint256 = min(_return, self.strategies[msg.sender].totalDebt)
-        if debtPayment == _return:
+        if _return < self.strategies[msg.sender].totalDebt:
             # Pay down our debt with profit
             # NOTE: Cannot return more than you borrowed
-            self.strategies[msg.sender].totalDebt -= debtPayment
-            self.totalDebt -= debtPayment
-        elif _return > 0:
-            # Pay off the last of our debt
-            if debtPayment > 0:  # Only happens once
-                self.strategies[msg.sender].totalDebt = 0
-                self.totalDebt -= debtPayment
+            self.strategies[msg.sender].totalDebt -= _return
+            self.totalDebt -= _return
 
+        else:
             # We are dealing with pure profit now
-            profit: uint256 = _return - debtPayment
+            profit: uint256 = _return - self.strategies[msg.sender].totalDebt
+
+            # Pay off the last of our debt
+            if profit < _return:  # Only happens once
+                self.totalDebt -= _return - profit
+                self.strategies[msg.sender].totalDebt = 0
+
             # Returns are always "realized gains"
             self.strategies[msg.sender].totalReturns += profit
 
