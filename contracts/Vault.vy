@@ -11,6 +11,9 @@ interface DetailedERC20:
     def symbol() -> String[20]: view
     def decimals() -> uint256: view
 
+interface Strategy:
+    def strategist() -> address: view
+
 event Transfer:
     sender: indexed(address)
     receiver: indexed(address)
@@ -61,8 +64,9 @@ debtChangeLimit: public(decimal)  # Amount strategy debt limit can change based 
 totalDebt: public(uint256)  # Amount of tokens that all strategies have borrowed
 
 rewards: public(address)
-performanceFee: public(uint256)
-PERFORMANCE_FEE_MAX: constant(uint256) = 10000
+performanceFee: public(uint256)  # Fee for strategist
+managementFee: public(uint256)  # Fee for governance rewards
+FEE_MAX: constant(uint256) = 10000
 
 @external
 def __init__(_token: address, _governance: address, _rewards: address):
@@ -74,7 +78,8 @@ def __init__(_token: address, _governance: address, _rewards: address):
     self.governance = _governance
     self.rewards = _rewards
     self.guardian = msg.sender
-    self.performanceFee = 500  # 5%
+    self.performanceFee = 450  # 4.5% of yield (per strategy)
+    self.managementFee = 50  # 0.5% of yield (overall)
     self.debtLimit = ERC20(_token).totalSupply() / 1000  # 0.1% of total supply of token
     self.debtChangeLimit =  0.005  # up to +/- 0.5% change allowed for strategy debt limits
 
@@ -117,6 +122,12 @@ def setPerformanceFee(_fee: uint256):
 
 
 @external
+def setManagementFee(_fee: uint256):
+    assert msg.sender == self.governance
+    self.managementFee = _fee
+
+
+@external
 def setGuardian(_guardian: address):
     assert msg.sender in [self.guardian, self.governance]
     self.guardian = _guardian
@@ -131,21 +142,24 @@ def setEmergencyShutdown(_active: bool):
     self.emergencyShutdown = _active
 
 
-@external
-def transfer(_to : address, _value : uint256) -> bool:
-    self.balanceOf[msg.sender] -= _value
+@internal
+def _transfer(_from: address, _to: address, _value: uint256):
+    self.balanceOf[_from] -= _value
     self.balanceOf[_to] += _value
-    log Transfer(msg.sender, _to, _value)
+    log Transfer(_from, _to, _value)
+
+
+@external
+def transfer(_to: address, _value: uint256) -> bool:
+    self._transfer(msg.sender, _to, _value)
     return True
 
 
 @external
 def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
-    self.balanceOf[_from] -= _value
-    self.balanceOf[_to] += _value
     if self.allowance[_from][msg.sender] < MAX_UINT256:  # Unlimited approval (saves an SSTORE)
        self.allowance[_from][msg.sender] -= _value
-    log Transfer(_from, _to, _value)
+    self._transfer(_from, _to, _value)
     return True
 
 
@@ -169,7 +183,7 @@ def totalAssets() -> uint256:
 
 
 @internal
-def _issueSharesForAmount(_to: address, _amount: uint256):
+def _issueSharesForAmount(_to: address, _amount: uint256) -> uint256:
     # NOTE: shares must be issued prior to taking on new collateral,
     #       or calculation will be wrong. This means that only *trusted*
     #       tokens (with no capability for exploitive behavior) can be used
@@ -186,16 +200,21 @@ def _issueSharesForAmount(_to: address, _amount: uint256):
     self.balanceOf[_to] += shares
     log Transfer(ZERO_ADDRESS, _to, shares)
 
+    return shares
+
 
 @external
-def deposit(_amount: uint256):
+def deposit(_amount: uint256) -> uint256:
     # Issue new shares (needs to be done before taking deposit)
-    self._issueSharesForAmount(msg.sender, _amount)
+    shares: uint256 = self._issueSharesForAmount(msg.sender, _amount)
+
     # Get new collateral
     reserve: uint256 = self.token.balanceOf(self)
     self.token.transferFrom(msg.sender, self, _amount)
     # TODO: `Deflationary` configuration only
     assert self.token.balanceOf(self) - reserve == _amount  # Deflationary token check
+
+    return shares  # Just in case someone wants them
 
 
 @view
@@ -412,14 +431,22 @@ def sync(_return: uint256):
     # Only approved strategies can call this function
     assert self.strategies[msg.sender].activation > 0
 
-    # Issue new shares to cover fee (if strategy is not shutting down)
-    # NOTE: In effect, this reduces overall share price by performanceFee
+    # Issue new shares to cover fees (if strategy is not shutting down)
+    # NOTE: In effect, this reduces overall share price by the combined fee
     # NOTE: No fee is taken when a strategy is unwinding it's position
-    # NOTE: This must be called prior to taking new collateral,
-    #       or the calculation will be wrong
     if self.strategies[msg.sender].debtLimit > 0:
-        fee: uint256 = (_return * self.performanceFee) / PERFORMANCE_FEE_MAX
-        self._issueSharesForAmount(self.rewards, fee)
+        management_fee: uint256 = (_return * self.managementFee) / FEE_MAX
+        strategist_fee: uint256 = (_return * self.performanceFee) / FEE_MAX
+        total_fee: uint256 = management_fee + strategist_fee
+        # NOTE: This must be called prior to taking new collateral,
+        #       or the calculation will be wrong!
+        # NOTE: This must be done at the same time, to ensure the relative
+        #       ratio of management_fee : strategist_fee is kept intact
+        self._issueSharesForAmount(self.rewards, total_fee)
+
+        # Send the rewards out as new shares in this Vault
+        self._transfer(self, self.rewards, management_fee / total_fee)
+        self._transfer(self, Strategy(msg.sender).strategist(), management_fee / total_fee)
 
     # Adjust debt limit based on current return vs. past performance
     # NOTE: This must be called at the exact moment a return is "realized"

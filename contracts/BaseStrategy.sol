@@ -100,9 +100,6 @@ abstract contract BaseStrategy {
     // to accomodate larger variations needed to sustain the strategy's core positon(s)
     uint256 public reserve = 0;
 
-    uint256 public performanceFee = 500;
-    uint256 public constant PERFORMANCE_MAX = 10000;
-
     bool public emergencyExit;
 
     constructor(address _vault, address _governance) public {
@@ -133,11 +130,6 @@ abstract contract BaseStrategy {
     function setKeeper(address _keeper) external {
         require(msg.sender == strategist || msg.sender == governance, "!governance");
         keeper = _keeper;
-    }
-
-    function setPerformanceFee(uint256 _performanceFee) external {
-        require(msg.sender == governance, "!governance");
-        performanceFee = _performanceFee;
     }
 
     /*
@@ -215,9 +207,6 @@ abstract contract BaseStrategy {
             // NOTE: Don't take performance fee in this scenario
         } else {
             prepareReturn(); // Free up returns for Vault to pull
-            // Send strategist their performance fee
-            uint256 _fee = want.balanceOf(address(this)).sub(reserve).mul(performanceFee).div(PERFORMANCE_MAX);
-            want.transfer(strategist, _fee);
         }
 
         if (reserve > want.balanceOf(address(this))) reserve = want.balanceOf(address(this));
