@@ -44,19 +44,30 @@ contract TestStrategy is BaseStrategy {
         (,,,,, er) = vault.strategies(address(this));
     }
 
+    uint preparedReturn = 0;
+
     function prepareReturn()
         internal
         override
     {
         // During testing, send this contract some tokens to simulate "Rewards"
+        preparedReturn = want.balanceOf(address(this)).sub(reserve);
     }
 
     function adjustPosition()
         internal
         override
     {
-        // Whatever we have, consider it "invested" now
-        reserve = want.balanceOf(address(this));
+        if (preparedReturn < want.balanceOf(address(this)).sub(reserve))
+        {
+            // Whatever we have, consider it "invested" now
+            reserve = want.balanceOf(address(this));
+        } else if (reserve >= preparedReturn) {
+            // If we're ramping down, keep releasing funds
+            reserve -= preparedReturn;
+        } else {
+            reserve = 0;
+        }
     }
 
     function exitPosition()
@@ -70,6 +81,7 @@ contract TestStrategy is BaseStrategy {
         } else {
             reserve = 0;
         }
+        preparedReturn = want.balanceOf(address(this)).sub(reserve);
     }
 
     function prepareMigration(address _newStrategy)
