@@ -354,6 +354,7 @@ def _adjustedDebtLimit(
     _actual: decimal,
     _expected: decimal,
 ) -> decimal:
+    # NOTE: This works in Emergency Shutdown/Emergency Exit as well
     if _currDebtLimit == 0.0:
         return 0.0
 
@@ -428,28 +429,34 @@ def sync(_return: uint256):
         uint256,
     )
 
-    # Update borrow based on delta between credit available and reported earnings
-    # NOTE: This is just used to adjust the balance of tokens based on the
-    #       adjusted debt limit.
-    # NOTE: credit + self.strategies[msg.sender].totalDebt is always < self.debtLimit
+    # Compute the line of credit the Vault is able to offer the Strategy (if any)
     credit: uint256 = self._creditAvailable(msg.sender)
+
+    # Give/take balance to Strategy, based on the difference between the return and
+    # the credit increase we are offering (if any)
+    # NOTE: This is just used to adjust the balance of tokens between the Strategy and
+    #       the Vault based on the adjusted debt limit.
     if _return < credit:  # credit surplus, give to strategy
-        diff: uint256 = credit - _return
-        self.token.transfer(msg.sender, diff)
-        self.strategies[msg.sender].totalDebt += diff
-        self.totalDebt += diff
-
+        self.token.transfer(msg.sender, credit - _return)
     elif _return > credit:  # credit deficit, take from strategy
-        diff: uint256 = _return - credit  # Take the difference
-        self.token.transferFrom(msg.sender, self, diff)
+        self.token.transferFrom(msg.sender, self, _return - credit)
 
+    # else, don't do anything because it is performing well as is
+
+    # Update the actual debt based on the full credit we are extending to the Strategy
+    # or the returns if we are taking funds back
+    # NOTE: credit + self.strategies[msg.sender].totalDebt is always < self.debtLimit
+    if credit > 0:
+        self.strategies[msg.sender].totalDebt += credit
+        self.totalDebt += credit
+
+    elif _return > 0:  # We're repaying debt now
+        debtPayment: uint256 = min(_return, self.strategies[msg.sender].totalDebt)
         # NOTE: Cannot return more than you borrowed
-        if diff > self.strategies[msg.sender].totalDebt:
-            diff = self.strategies[msg.sender].totalDebt
+        self.strategies[msg.sender].totalDebt -= debtPayment
+        self.totalDebt -= debtPayment
 
-        self.strategies[msg.sender].totalDebt -= diff
-        self.totalDebt -= diff
-    # else if matching, don't do anything because it is performing well as is
+    # else, we are perfectly in balance
 
     # Returns are always "realized gains"
     self.strategies[msg.sender].totalReturns += _return
