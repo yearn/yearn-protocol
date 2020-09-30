@@ -207,7 +207,10 @@ def _shareValue(_shares: uint256) -> uint256:
 @view
 @internal
 def _maxAvailableShares() -> uint256:
-    return (self.token.balanceOf(self) * self.totalSupply) / self._totalAssets()
+    if self._totalAssets() > 0:
+        return (self.token.balanceOf(self) * self.totalSupply) / self._totalAssets()
+    else:
+        return 0
 
 
 @view
