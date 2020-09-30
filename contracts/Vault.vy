@@ -450,16 +450,28 @@ def sync(_return: uint256):
         self.strategies[msg.sender].totalDebt += credit
         self.totalDebt += credit
 
+        # Returns are always "realized gains"
+        self.strategies[msg.sender].totalReturns += _return
+
     elif _return > 0:  # We're repaying debt now
         debtPayment: uint256 = min(_return, self.strategies[msg.sender].totalDebt)
-        # NOTE: Cannot return more than you borrowed
-        self.strategies[msg.sender].totalDebt -= debtPayment
-        self.totalDebt -= debtPayment
+        if debtPayment == _return:
+            # Pay down our debt with profit
+            # NOTE: Cannot return more than you borrowed
+            self.strategies[msg.sender].totalDebt -= debtPayment
+            self.totalDebt -= debtPayment
+        elif _return > 0:
+            # Pay off the last of our debt
+            if debtPayment > 0:  # Only happens once
+                self.strategies[msg.sender].totalDebt = 0
+                self.totalDebt -= debtPayment
+
+            # We are dealing with pure profit now
+            profit: uint256 = _return - debtPayment
+            # Returns are always "realized gains"
+            self.strategies[msg.sender].totalReturns += profit
 
     # else, we are perfectly in balance
-
-    # Returns are always "realized gains"
-    self.strategies[msg.sender].totalReturns += _return
 
     # Update sync time
     self.strategies[msg.sender].lastSync = block.number
