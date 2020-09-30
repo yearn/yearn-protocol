@@ -170,6 +170,9 @@ def totalAssets() -> uint256:
 
 @internal
 def _issueSharesForAmount(_to: address, _amount: uint256):
+    # NOTE: shares must be issued prior to taking on new collateral,
+    #       or calculation will be wrong. This means that only *trusted*
+    #       tokens (with no capability for exploitive behavior) can be used
     shares: uint256 = 0
     if self.totalSupply > 0:
         # Mint amount of shares based on what the Vault is managing overall
@@ -186,12 +189,13 @@ def _issueSharesForAmount(_to: address, _amount: uint256):
 
 @external
 def deposit(_amount: uint256):
+    # Issue new shares (needs to be done before taking deposit)
+    self._issueSharesForAmount(msg.sender, _amount)
     # Get new collateral
     reserve: uint256 = self.token.balanceOf(self)
     self.token.transferFrom(msg.sender, self, _amount)
     # TODO: `Deflationary` configuration only
     assert self.token.balanceOf(self) - reserve == _amount  # Deflationary token check
-    self._issueSharesForAmount(msg.sender, _amount)
 
 
 @view
@@ -407,6 +411,8 @@ def sync(_return: uint256):
     # Issue new shares to cover fee (if strategy is not shutting down)
     # NOTE: In effect, this reduces overall share price by performanceFee
     # NOTE: No fee is taken when a strategy is unwinding it's position
+    # NOTE: This must be called prior to taking new collateral,
+    #       or the calculation will be wrong
     if self.strategies[msg.sender].debtLimit > 0:
         fee: uint256 = (_return * self.performanceFee) / PERFORMANCE_FEE_MAX
         self._issueSharesForAmount(self.rewards, fee)

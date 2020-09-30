@@ -11,13 +11,27 @@ def vault(gov, token, Vault):
 def test_deposit_withdraw(gov, vault, token):
     balance = token.balanceOf(gov)
     token.approve(vault, balance, {"from": gov})
-    vault.deposit(balance, {"from": gov})
+    vault.deposit(balance // 2, {"from": gov})
+
+    assert token.balanceOf(vault) == balance // 2
+    assert vault.totalDebt() == 0
+    assert vault.pricePerShare() == 10 ** token.decimals()  # 1:1 price
+
+    # Do it twice to test behavior when it has shares
+    vault.deposit(token.balanceOf(gov), {"from": gov})
 
     assert vault.totalSupply() == token.balanceOf(vault) == balance
     assert vault.totalDebt() == 0
     assert vault.pricePerShare() == 10 ** token.decimals()  # 1:1 price
 
-    vault.withdraw(vault.balanceOf(gov), {"from": gov})
+    vault.withdraw(vault.balanceOf(gov) // 2, {"from": gov})
+
+    assert token.balanceOf(vault) == balance // 2
+    assert vault.totalDebt() == 0
+    assert vault.pricePerShare() == 10 ** token.decimals()  # 1:1 price
+
+    # This works because it's *max* shares, and it adjusts by total available
+    vault.withdraw(2 * vault.balanceOf(gov), {"from": gov})
 
     assert vault.totalSupply() == token.balanceOf(vault) == 0
     assert vault.totalDebt() == 0
