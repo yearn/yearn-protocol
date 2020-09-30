@@ -1,9 +1,10 @@
 import brownie
 
 
-def test_good_migration(
-    token, strategy, vault, gov, strategist, rando, TestStrategy, chain
-):
+def test_good_migration(token, strategy, vault, gov, strategist, TestStrategy, chain):
+    # Call this once to seed the strategy with debt
+    strategy.harvest({"from": strategist})
+
     strategy_debt = vault.strategies(strategy)[4]  # totalDebt
     prior_position = token.balanceOf(strategy)
     assert strategy_debt > 0

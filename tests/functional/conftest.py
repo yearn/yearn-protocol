@@ -44,21 +44,14 @@ def keeper(accounts):
 
 
 @pytest.fixture
-def strategy(gov, strategist, token, vault, TestStrategy):
+def strategy(gov, strategist, keeper, token, vault, TestStrategy):
     strategy = strategist.deploy(TestStrategy, vault, gov)
+    strategy.setKeeper(keeper, {"from": strategist})
     vault.addStrategy(
         strategy,
-        token.totalSupply(),  # Debt limit of 100% of token supply
+        token.totalSupply() // 5,  # Debt limit of 20% of token supply (40% of Vault)
         token.totalSupply() // 1000,  # Rate limt of 0.1% of token supply per block
         {"from": gov},
-    )
-    # Call this once to seed the strategy with debt
-    strategy.harvest({"from": strategist})
-    assert token.balanceOf(strategy) > 0
-    assert (
-        token.balanceOf(strategy)
-        == vault.totalDebt()
-        == vault.strategies(strategy)[4]  # totalDebt
     )
     yield strategy
 
