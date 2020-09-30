@@ -93,5 +93,7 @@ def test_sync(vault, strategy, gov, rando):
     with brownie.reverts():
         vault.sync(0, {"from": rando})
 
+    strategy.tend({"from": gov}) # Do this for converage of Strategy.tend()
+
     vault.addStrategy(strategy, 1000, 10, {"from": gov})
     vault.expectedReturn(strategy)  # Do this for coverage of Vault._expectedReturn()
