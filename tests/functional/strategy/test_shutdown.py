@@ -59,7 +59,6 @@ def test_emergency_exit(token, gov, vault, strategy, keeper, chain):
     last_balance = token.balanceOf(strategy)
     while token.balanceOf(strategy) > 0:
         chain.mine(10)
-        add_yield()  # We're still vested on our positions!
         strategy.harvest({"from": keeper})
 
         # Make sure we are divesting

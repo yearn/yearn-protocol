@@ -12,6 +12,10 @@ def test_strategy_deployment(strategist, gov, vault, TestStrategy):
     assert strategy.performanceFee() == 500
     assert not strategy.emergencyExit()
 
+    assert strategy.expectedReturn() == 0
+    assert not strategy.harvestTrigger(10 ** 18)
+    assert not strategy.tendTrigger(10 ** 18)
+
 
 def test_vault_setPerformanceFee(strategy, gov, strategist, rando):
     # Only governance can set this param

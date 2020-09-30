@@ -86,3 +86,12 @@ def test_revokeStrategy(web3, gov, vault, strategy, rando):
         0,
         0,
     ]
+
+
+def test_sync(vault, strategy, gov, rando):
+    # Not just anyone can call sync()
+    with brownie.reverts():
+        vault.sync(0, {"from": rando})
+
+    vault.addStrategy(strategy, 1000, 10, {"from": gov})
+    vault.expectedReturn(strategy)  # Do this for coverage of Vault._expectedReturn()

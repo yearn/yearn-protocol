@@ -16,6 +16,11 @@ def test_vault_deployment(guardian, gov, rewards, token, Vault):
     assert vault.symbol() == "y" + token.symbol()
     assert vault.decimals() == token.decimals()
 
+    assert vault.creditAvailable() == 0
+    assert vault.estimateAdjustedDebtLimit(0) == 0
+    assert vault.maxAvailableShares() == 0
+    assert vault.totalAssets() == 0
+
 
 @pytest.mark.parametrize(
     "getter,setter,val",
