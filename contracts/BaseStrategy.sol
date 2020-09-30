@@ -250,4 +250,9 @@ abstract contract BaseStrategy {
         if (reserve > want.balanceOf(address(this))) reserve = want.balanceOf(address(this));
         vault.sync(want.balanceOf(address(this)).sub(reserve));
     }
+
+    function sweep(address _token) external {
+        require(_token != address(want), "!want");
+        IERC20(_token).transfer(governance, IERC20(_token).balanceOf(address(this)));
+    }
 }

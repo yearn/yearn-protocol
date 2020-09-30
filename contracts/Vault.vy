@@ -488,3 +488,9 @@ def sync(_return: uint256):
         self.strategies[msg.sender].totalDebt,
         self.strategies[msg.sender].debtLimit,
     )
+
+
+@external
+def sweep(_token: address):
+    assert ERC20(_token) != self.token
+    ERC20(_token).transfer(self.governance, ERC20(_token).balanceOf(self))
