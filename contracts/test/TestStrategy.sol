@@ -23,8 +23,7 @@ contract TestStrategy is BaseStrategy {
         override
         returns (bool)
     {
-        // Dummy function
-        return gasCost == 0;
+        return gasCost < 0.1 ether && want.balanceOf(address(this)) == reserve;
     }
 
     function harvestTrigger(uint256 gasCost)
@@ -33,8 +32,7 @@ contract TestStrategy is BaseStrategy {
         override
         returns (bool)
     {
-        // Dummy function
-        return gasCost > 0;
+        return gasCost < want.balanceOf(address(this)).sub(reserve);
     }
 
     function expectedReturn()
