@@ -1,7 +1,7 @@
-from brownie import Contract, accounts, network
+from brownie import accounts, network, interface
 from decimal import Decimal
 from eth_utils import is_checksum_address
-from requests import requests
+import requests
 from time import sleep
 
 
@@ -14,27 +14,30 @@ def get_address(msg: str) -> str:
 
 
 def get_gas_price(confirmation_speed: str = "fast"):
+    if "mainnet" not in network.show_active():
+        return 10 ** 9  # 1 gwei
     data = requests.get("https://www.gasnow.org/api/v3/gas/price").json()
     return data["data"][confirmation_speed]
 
 
 def main():
     print(f"You are using the '{network.show_active()}' network")
-    dev = accounts.load("dev")
-    print(f"You are using: 'dev' [{dev.address}]")
-    strategy = Contract.from_explorer(get_address("Strategy to farm: "))
+    bot = accounts.load("bot")
+    print(f"You are using: 'bot' [{bot.address}]")
+    strategy = interface.StrategyAPI(get_address("Strategy to farm: "))
+
+    assert strategy.keeper() == bot.address, "Bot is not set as keeper!"
 
     while True:
 
         gas_price = get_gas_price()
-        if strategy.tendTrigger(strategy.tend.gasEstimate() * gas_price):
-            tx = strategy.tend({"from": dev, "gas_price": gas_price})
-            print(f"`tend()` [{(tx.gas_used * tx.gas_price) / Decimal('1e-18')} ETH]")
+        starting_balance = bot.balance()
+        if strategy.tendTrigger(40000 * gas_price):
+            strategy.tend({"from": bot, "gas_price": gas_price})
+            print(f"`tend()` [{starting_balance - bot.balance()} wei]")
 
-        elif strategy.harvestTrigger(strategy.harvest.gasEstimate() * gas_price):
-            tx = strategy.harvest({"from": dev, "gas_price": gas_price})
-            print(
-                f"`harvest()` [{(tx.gas_used * tx.gas_price) / Decimal('1e-18')} ETH]"
-            )
+        elif strategy.harvestTrigger(120000 * gas_price):
+            strategy.harvest({"from": bot, "gas_price": gas_price})
+            print(f"`harvest()` [{starting_balance - bot.balance()} wei]")
 
-        sleep(1000)
+        sleep(60)
