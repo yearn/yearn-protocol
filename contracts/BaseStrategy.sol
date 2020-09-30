@@ -65,6 +65,21 @@ interface VaultAPI {
 }
 
 /*
+ * This interface is here for the keeper bot to use
+ */
+interface StrategyAPI {
+    function keeper() external view returns (address);
+
+    function tendTrigger(uint256 gasCost) external view returns (bool);
+
+    function tend() external;
+
+    function harvestTrigger(uint256 gasCost) external view returns (bool);
+
+    function harvest() external;
+}
+
+/*
  * BaseStrategy implements all of the required functionality to interoperate closely
  * with the core protocol. This contract should be inherited and the abstract methods
  * implemented to adapt the strategy to the particular needs it has to create a return.
