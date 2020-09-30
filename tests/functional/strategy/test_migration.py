@@ -13,10 +13,6 @@ def test_good_migration(
     assert vault.strategies(new_strategy)[4] == 0
     assert token.balanceOf(new_strategy) == 0
 
-    # Not just anyone can migrate
-    with brownie.reverts():
-        strategy.migrate(new_strategy, {"from": rando})
-
     # Strategist can migrate
     strategy.migrate(new_strategy, {"from": strategist})
     assert vault.strategies(strategy)[4] == 0
@@ -36,5 +32,6 @@ def test_bad_migration(token, strategy, gov, strategist, TestStrategy, Vault):
     different_vault = gov.deploy(Vault, token, gov, gov)
     new_strategy = strategist.deploy(TestStrategy, different_vault, gov)
 
+    # Can't migrate to a strategy with a different vault
     with brownie.reverts():
         strategy.migrate(new_strategy, {"from": gov})

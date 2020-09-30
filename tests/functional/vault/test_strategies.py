@@ -34,6 +34,10 @@ def test_addStrategy(web3, gov, vault, strategy, rando):
 
 
 def test_updateStrategy(web3, gov, vault, strategy, rando):
+    # Can't update an unapproved strategy
+    with brownie.reverts():
+        vault.updateStrategy(strategy, 1500, 15, {"from": gov})
+
     vault.addStrategy(strategy, 1000, 10, {"from": gov})
     activation_block = web3.eth.blockNumber  # Deployed right before test started
 
@@ -50,6 +54,19 @@ def test_updateStrategy(web3, gov, vault, strategy, rando):
         0,
         0,
     ]
+
+
+def test_migrateStrategy(accounts, gov, vault, rando):
+    strategy = accounts[2]
+    vault.addStrategy(strategy, 1000, 10, {"from": gov})
+
+    # Not just anyone can migrate
+    with brownie.reverts():
+        vault.migrateStrategy(strategy, {"from": rando})
+
+    # Can't migrate to itself
+    with brownie.reverts():
+        vault.migrateStrategy(strategy, {"from": strategy})
 
 
 def test_revokeStrategy(web3, gov, vault, strategy, rando):
