@@ -15,24 +15,17 @@ This document specifies the Bug Bounty program for Yearn Finance, including the 
 
 ### Vulnerability Classifications
 
-**Severe** - an issue that may result in a loss of greater than \$10m of funds locked in Yearn, or may result in permanent impairment of the ecosystem.
-
-**High** - an issue that may result in a loss of greater than \$1m but less than \$10m of funds locked in Yearn, or may result in severe damage to the ecosystem.
-
-**Medium** - an issue that may result in a loss of greater than \$10k but less than \$1m of funds locked in Yearn, or cause either extreme user dissatisfaction or damage to the ecosystem.
-
-**Low** - an issue that may result in user dissatisfaction but less than \$10k loss of funds locked in Yearn.
-
+**Severe** - an issue that may result in a loss of greater than \$10m of funds locked in Yearn, or may result in permanent impairment of the ecosystem.\
+**High** - an issue that may result in a loss of greater than \$1m but less than \$10m of funds locked in Yearn, or may result in severe damage to the ecosystem.\
+**Medium** - an issue that may result in a loss of greater than \$10k but less than \$1m of funds locked in Yearn, or cause either extreme user dissatisfaction or damage to the ecosystem.\
+**Low** - an issue that may result in user dissatisfaction but less than \$10k loss of funds locked in Yearn.\
 **Note** - an issue that may result in minimal user dissatisfaction and no financial loss, but could be rectified to improve the Yearn ecosystem.
 
 ### Likelihood Classifications
 
-**Certain** - exploitable by anyone, with no preconditions required for success.
-
-**Likely** - exploitable by anyone, under certain conditions (e.g., user with x amount of funds locked, or exploitable only over a longer period of time).
-
-**Possible** - exploitable with 1 external fault required to access vulnerability, or direct access by single privileged key (e.g., Yearn strategist, bot, etc).
-
+**Certain** - exploitable by anyone, with no preconditions required for success.\
+**Likely** - exploitable by anyone, under certain conditions (e.g., user with x amount of funds locked, or exploitable only over a longer period of time).\
+**Possible** - exploitable with 1 external fault required to access vulnerability, or direct access by single privileged key (e.g., Yearn strategist, bot, etc).\
 **Unlikely** - exploitable with 2 or more external faults required to access, or
 direct access by a compromised Yearn multi-sig or Governance system).
 
