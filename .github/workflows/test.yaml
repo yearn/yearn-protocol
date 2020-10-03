@@ -1,6 +1,6 @@
 name: Test
 
-on: [push]
+on: [pull_request, push]
 
 env:
   ETHERSCAN_TOKEN:  ${{ secrets.ETHERSCAN_TOKEN }}
