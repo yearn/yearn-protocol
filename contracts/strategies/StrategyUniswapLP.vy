@@ -50,7 +50,8 @@ interface UniswapPair:
     def totalSupply() -> uint256: view
     def token0() -> address: view
     def token1() -> address: view
-    def approve(_spender: address, _value: uint256) -> bool: nonpayable
+    def approve(spender: address, amount: uint256) -> bool: nonpayable
+    def transfer(recipient: address, amount: uint256) -> bool: nonpayable
     def getReserves() -> (uint256, uint256, uint256): view
     def quote(amountA: uint256, reserveA: uint256, reserveB: uint256) -> uint256: view
 
@@ -228,6 +229,8 @@ def harvest():
 def migrate(_newStrategy: address):
     assert msg.sender in [self.strategist, self.governance]
     assert StrategyAPI(_newStrategy).vault() == self.vault.address
+    self.exitPosition()
+    self.want.transfer(_newStrategy, self.want.balanceOf(self))
     self.vault.migrateStrategy(_newStrategy)
 
 
