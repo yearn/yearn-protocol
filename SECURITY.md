@@ -2,24 +2,18 @@
 
 This document describes the Security Process for Yearn Finance, including vulnerability disclosures and its [Bug Bounty program](#bug-bounty-program). We are committed to conduct our Security Process in a professional and civil manner. Public shaming, under-reporting, or misrepresentation of vulnerabilities will not be tolerated.
 
-To submit a finding, please follow the steps outlined [here](#receiving-disclosures).
+To submit a finding, please follow the steps outlined in receiving disclosures [section](#receiving-disclosures).
 
 ## Responsible Disclosure Standard
 
-Yearn follows a
-[community standard for responsible disclosure](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#the-standard)
-in cryptocurrency and related software. This document is a public commitment to
+Yearn follows a community [standard](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#the-standard) for responsible disclosure in cryptocurrency and related software. This document is a public commitment to
 following the standard.
 
 This standard provides detailed information for:
 
--   [Initial Contact](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#initial-contact):
-    how to establish initial contact with Yearn's security team
--   [Giving Details](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#giving-details):
-    what details to include with your vulnerability disclosure after having received a response to your
-    initial contact
--   [Setting Dates](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#setting-dates):
-    how to agree on timelines for releasing updates and making details of the issue public
+-   [Initial Contact](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#initial-contact): how to establish initial contact with Yearn's security team.
+-   [Giving Details](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#giving-details): what details to include with your vulnerability disclosure after having received a response to your initial contact.
+-   [Setting Dates](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#setting-dates): how to agree on timelines for releasing updates and making details of the issue public.
 
 Any expected deviations and necessary clarifications around the standard are explained in the following sections.
 
@@ -37,7 +31,7 @@ For all security related issues, Yearn has 3 main points of contact:
 
 | Contact                | Public key                                                                                                   | Email                             | Keybase                                         |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------- | ----------------------------------------------- |
-| Milky Klim             | [PGP](https://github.com/iearn-finance/yearn-security/blob/master/keys/publickey.y%40milkyklim.com.asc)      | y at milkyklim.com                | [@milkyklim](https://keybase.io/milkyklim/chat) |
+| milkyklim              | [PGP](https://github.com/iearn-finance/yearn-security/blob/master/keys/milkyklim.asc)                        | y at milkyklim.com                | [@milkyklim](https://keybase.io/milkyklim/chat) |
 | Doggie Boy / fubuloubu | [PGP](https://github.com/iearn-finance/yearn-security/blob/master/keys/publickey.yearn-security%40pm.me.asc) | yearn-security at pm.me           | N/A                                             |
 | Daniel Lehnberg        | [PGP](https://github.com/iearn-finance/yearn-security/blob/master/keys/lehnberg.asc)                         | daniel.lehnberg at protonmail.com | [@lehnberg](https://keybase.io/lehnberg/chat)   |
 
@@ -49,7 +43,7 @@ You can also reach out informally over keybase encrypted chat to one or more of 
 
 In the case where we become aware of security issues affecting other projects that has never affected Yearn, our intention is to inform those projects of security issues on a best effort basis.
 
-In the case where we fix a security issue in Yearn that also affects the following neighboring projects, our intention is to engage in responsible disclosures with them as described in the adopted [standard](https://github.com/RD-Crypto-Spec/Responsible-Disclosure), subject to the deviations described in the [deviations section](#deviations-from-the-standard) of this document.
+In the case where we fix a security issue in Yearn that also affects the following neighboring projects, our intention is to engage in responsible disclosures with them as described in the adopted [standard](https://github.com/RD-Crypto-Spec/Responsible-Disclosure), subject to the deviations described in the deviations [section](#deviations-from-the-standard) of this document.
 
 ## Bilateral Responsible Disclosure Agreements
 
@@ -63,7 +57,7 @@ Yearn has a Bug Bounty program to encourage security researchers to spend time s
 
 1. Bug has not been publicly disclosed.
 2. Vulnerabilities that have been previously submitted by another contributor or already known by the Yearn development team are not eligible for rewards.
-3. The size of the bounty payout depends on the assessment of the severity of the exploit. Please refer to the [rewards section](#rewards) below for additional details.
+3. The size of the bounty payout depends on the assessment of the severity of the exploit. Please refer to the rewards [section](#rewards) below for additional details.
 4. Bugs must be reproducible in order for us to verify the vulnerability.
 5. Rewards and the validity of bugs are determined by the Yearn security team and any payouts are made at their sole discretion.
 6. Terms and conditions of the Bug Bounty program can be changed at any time at the discretion of Yearn.
@@ -80,8 +74,8 @@ Yearn has a Bug Bounty program to encourage security researchers to spend time s
 
 -   **Severe:** 20,000-50,000 yUSD
 -   **High:** 5,000-20,000 yUSD
--   **Medium.** 1,000-5,000 yUSD
--   **Low.** 100-1,000 yUSD
+-   **Medium:** 1,000-5,000 yUSD
+-   **Low:** 100-1,000 yUSD
 
 Actual payouts are determined by classifying the vulnerability based on its impact and likelihood to be exploited successfully, as well as the process working with the disclosing security researcher. The rewards represent the _maximum_ that will be paid out for a disclosure.
 
