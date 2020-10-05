@@ -1,38 +1,33 @@
-# Contributing to Yearn
-This is a living guide that defines a development process for The Yearn.finance Core Protocol. 
+# [Yearn Protocol](https://yearn.finance/) &middot; [![GitHub license](https://img.shields.io/badge/license-AGPL-blue.svg)](https://github.com/iearn-finance/yearn-protocol/blob/master/LICENSE)
 
-We want to make contributing to this project as easy and transparent as possible, whether it's:
+Yearn Protocol is a set of Ethereum Smart Contracts focused on creating a simple way to generate high risk-adjusted returns for depositors of various assets via best-in-class lending protocols, liquidity pools, and community-made yield farming strategies on Ethereum.
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
-- Becoming a maintainer
+Before getting started with this repo, please read:
 
-## We Develop with Github
-We use github to host code, to track issues and feature requests, as well as accept pull requests.
+* [Andre's Overview Blog Post](https://medium.com/iearn/yearn-finance-v2-af2c6a6a3613), describing how yearn.finance works
+* The [Delegated Vaults Blog Post](https://medium.com/iearn/delegated-vaults-explained-fa81f1c3fce2), explaining how the delegated vaults work
+* [yETH Vault Explained](https://medium.com/iearn/yeth-vault-explained-c29d6b93a371), describing how the yETH vault works
 
-## We Use [Github Flow](https://guides.github.com/introduction/flow/index.html), So All Code Changes Happen Through Pull Requests
-Pull requests are the best way to propose changes to the codebase (we use [Github Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests:
-
-1. Fork the repo and create your branch from `master`.
-2. If you've added code that should be tested, add tests or ensure it doesn't break current tests.
-3. If you've changed something impacting current docs, please update the documentation.
-4. Ensure the test suite passes if applicable.
-5. Make sure your code lints.
-6. Issue that pull request!
-
-## Release Process
-The `master` branch has the up to date changes of the codebase with working code. Releases should be tracked via git tags to link a specific commit to a deployment for history and documentation purposes.
-
-## Tests
-
-Requirements for running tests locally: 
+## Requirements
+Requirements for running the project: 
 * Python 3.8 local development environment and NodeJs 10.x development environment for Ganache
 * Brownie local environment setup. See here for instructions: [ETH Brownie](https://github.com/eth-brownie/brownie) 
 * Local env variables for [Etherscan API](https://etherscan.io/apis) and [Infura](https://infura.io/). ETHERSCAN_TOKEN, WEB3_INFURA_PROJECT_ID
 * Local Ganache environment installed with `npm install -g ganache-cli@6.10.1`
 
+## Installation
+
+To run the yearn protocol, pull the repository from GitHub and install its dependencies. You will need [yarn](https://yarnpkg.com/lang/en/docs/install/) or [npm](https://docs.npmjs.com/cli/install) installed.
+
+    git clone https://github.com/iearn-finance/yearn-protocol/
+    cd yearn-protocol
+    yarn install --lock-file # or `npm install`
+
+
+Compile the Smart Contracts
+`brownie compile`
+
+## Tests
 
 Running tests:
 `brownie test -s`
@@ -40,42 +35,21 @@ Running tests:
 Running tests with coverage:
 `brownie test -s --coverage`
 
-## Github Actions
-Repository uses GH actions to setup CI for test harness.
-You can see an example [here](https://github.com/iearn-finance/yearn-protocol/blob/master/.github/workflows/test.yaml)
+## Linting
+Checking linter rules
+`yarn lint:check`
 
-Be sure to setup in the repository any secret or env variable needed for your GH actions to work.
+Fixing linter rules
+`yarn lint:fix`
 
+## Security
 
-## Any contributions you make will be under the APGL Software License
-In short, when you submit code changes, your submissions are understood to be under the same [APGL License](https://choosealicense.com/licenses/agpl-3.0/) that covers the project. Feel free to contact the maintainers if that's a concern.
+For security concerns, please visit [Bug Bounty](https://github.com/iearn-finance/yearn-protocol/blob/develop/SECURITY.md) or email [yearn-security@pm.me](yearn-security@pm.me).
 
-## Report bugs using Github's [issues](https://github.com/iearn-finance/yearn-protocol/issues)
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/iearn-finance/yearn-protocol/issues/new); it's that easy!
+## Documentation
 
-Before adding a new issue, please check that your issue is not already identified or hasn't been handled by searching the active/closed issues.
+You can read more about yearn finance on our [Documentation Site](https://docs.yearn.finance/).
 
-## Write bug reports with detail, background, and sample code
-[This is an example](http://stackoverflow.com/q/12488905/180626) of a bug report I wrote, and I think it's not a bad model. Here's [another example from Craig Hockenberry](http://www.openradar.me/11905408), an app developer whom I greatly respect.
+## Discussion
 
-**Great Bug Reports** tend to have:
-
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can. 
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
-
-## Use a Consistent Coding Style
-
-* Setup prettier and solium linters into your local coding environment.
-* Check that your changes adhere to the linting rules before pushing.
-* Merging may be blocked if a PR does not follow the coding style guidelines.
-
-## License
-By contributing, you agree that your contributions will be licensed under its APGL License.
-
-## References
-TBD
+For questions not covered in the docs regarding the Yearn Protocol, please visit [our Discord server](https://discord.gg/CY3RdS).
