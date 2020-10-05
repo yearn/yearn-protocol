@@ -189,6 +189,7 @@ def adjustPosition():
 @internal
 def exitPosition():
     self.staking.exit()
+    self.prepareReturn()
 
 
 @view
