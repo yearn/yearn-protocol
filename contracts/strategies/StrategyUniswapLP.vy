@@ -168,6 +168,10 @@ def prepareReturn():
         0,
         self
     )
+
+
+@internal
+def adjustPosition():
     self.uni_router.addLiquidity(
         self.token0.address,
         self.token1.address,
@@ -178,10 +182,6 @@ def prepareReturn():
         self,
         block.timestamp
     )
-
-
-@internal
-def adjustPosition():
     self.staking.stake(self.want.balanceOf(self))
 
 
