@@ -29,7 +29,43 @@ interface StrategyAPI:
     def vault() -> address: view
 
 
-# implements: StrategyAPI
+interface StakingRewards:
+    def earned(account: address) -> uint256: view
+    def balanceOf(account: address) -> uint256: view
+    def stakingToken() -> address: view
+    def rewardsToken() -> address: view
+    def stake(amount: uint256): nonpayable
+    def withdraw(amount: uint256): nonpayable
+    def getReward(): nonpayable
+    def exit(): nonpayable
+
+
+interface UniswapWrapper:
+    def swap(token_in: address, token_out: address, amount_in: uint256, min_amount_out: uint256, to: address) -> bool: nonpayable
+    def quote(token_in: address, token_out: address, amount_in: uint256) -> uint256: view
+
+
+interface UniswapPair:
+    def balanceOf(owner: address) -> uint256: view
+    def totalSupply() -> uint256: view
+    def token0() -> address: view
+    def token1() -> address: view
+    def approve(_spender: address, _value: uint256) -> bool: nonpayable
+    def getReserves() -> (uint256, uint256, uint256): view
+    def quote(amountA: uint256, reserveA: uint256, reserveB: uint256) -> uint256: view
+
+
+interface UniswapRouter:
+    def addLiquidity(
+        tokenA: address,
+        tokenB: address,
+        amountADesired: uint256,
+        amountBDesired: uint256,
+        amountAMin: uint256,
+        amountBMin: uint256,
+        to: address,
+        deadline: uint256
+    ) -> (uint256, uint256, uint256): nonpayable
 
 
 vault: public(VaultAPI)
@@ -37,19 +73,38 @@ strategist: public(address)
 keeper: public(address)
 governance: public(address)
 pendingGovernance: public(address)
-want: public(ERC20)
+want: public(UniswapPair)
 reserve: public(uint256)
 emergencyExit: public(bool)
+staking: public(StakingRewards)
+uni_wrap: UniswapWrapper
+uni_router: UniswapRouter
+reward: ERC20
+token0: ERC20
+token1: ERC20
 
 
 @external
-def __init__(_vault: address, _governance: address):
+def __init__(_vault: address, _governance: address, _staking: address):
     self.vault = VaultAPI(_vault)
-    self.want = ERC20(self.vault.token())
-    self.want.approve(self.vault.address, MAX_UINT256)
+    self.want = UniswapPair(self.vault.token())
     self.strategist = msg.sender
     self.keeper = msg.sender
     self.governance = _governance
+
+    self.staking = StakingRewards(_staking)
+    assert self.staking.stakingToken() == self.want.address, "!want"
+    self.reward = ERC20(self.staking.rewardsToken())
+    self.token0 = ERC20(self.want.token0())
+    self.token1 = ERC20(self.want.token1())
+
+    self.uni_wrap = UniswapWrapper(0xE929d7af8CEdA5D6002568110675B82D3fA84BA3)
+    self.uni_router = UniswapRouter(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D)
+
+    self.want.approve(self.vault.address, MAX_UINT256)
+    self.token0.approve(self.uni_router.address, MAX_UINT256)
+    self.token1.approve(self.uni_router.address, MAX_UINT256)
+    self.reward.approve(self.uni_wrap.address, MAX_UINT256)
 
 
 @external
@@ -79,28 +134,66 @@ def setKeeper(_keeper: address):
 @view
 @external
 def expectedReturn() -> uint256:
-    return 0
+    earned: uint256 = self.staking.earned(self)
+    amount0: uint256 = self.uni_wrap.quote(self.reward.address, self.token0.address, earned / 2)
+    amount1: uint256 = self.uni_wrap.quote(self.reward.address, self.token1.address, earned / 2)
+
+    reserve0: uint256 = 0
+    reserve1: uint256 = 0
+    ts: uint256 = 0
+    reserve0, reserve1, ts = self.want.getReserves()
+    supply: uint256 = self.want.totalSupply()
+
+    liquidity: uint256 = min(
+        amount0 * supply / reserve0,
+        amount1 * supply / reserve1,
+    )
+    return liquidity
 
 
 @internal
 def prepareReturn():
-    pass
+    self.staking.getReward()
+    self.uni_wrap.swap(
+        self.reward.address,
+        self.token0.address,
+        self.reward.balanceOf(self) / 2,
+        0,
+        self
+    )
+    self.uni_wrap.swap(
+        self.reward.address,
+        self.token1.address,
+        self.reward.balanceOf(self),
+        0,
+        self
+    )
+    self.uni_router.addLiquidity(
+        self.token0.address,
+        self.token1.address,
+        self.token0.balanceOf(self),
+        self.token1.balanceOf(self),
+        0,
+        0,
+        self,
+        block.timestamp
+    )
 
 
 @internal
 def adjustPosition():
-    pass
+    self.staking.stake(self.want.balanceOf(self))
 
 
 @internal
 def exitPosition():
-    pass
+    self.staking.exit()
 
 
 @view
 @external
 def tendTrigger(gasCost: uint256) -> bool:
-    return True
+    return False
 
 
 @external
@@ -112,7 +205,7 @@ def tend():
 @view
 @external
 def harvestTrigger(gasCost: uint256) -> bool:
-    return True
+    return ERC20(self.want.address).balanceOf(self) > 0
 
 
 @external
