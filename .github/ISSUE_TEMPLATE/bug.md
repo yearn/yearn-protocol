@@ -13,7 +13,7 @@ Please include following information:
 -   Steps to reproduce (if applicable).
 -   What is expected to happen.
 -   What actually happens.
--   Notes (Code in repo is out of sync with deployed code, etc)
+-   Notes.
 
 ### How can it be fixed?
 
