@@ -75,7 +75,6 @@ keeper: public(address)
 governance: public(address)
 pendingGovernance: public(address)
 want: public(UniswapPair)
-reserve: public(uint256)
 emergencyExit: public(bool)
 staking: public(StakingRewards)
 uni_wrap: UniswapWrapper
@@ -169,10 +168,6 @@ def prepareReturn():
         0,
         self
     )
-
-
-@internal
-def adjustPosition():
     self.uni_router.addLiquidity(
         self.token0.address,
         self.token1.address,
@@ -183,6 +178,10 @@ def adjustPosition():
         self,
         block.timestamp
     )
+
+
+@internal
+def adjustPosition():
     self.staking.stake(self.want.balanceOf(self))
 
 
@@ -200,8 +199,7 @@ def tendTrigger(gasCost: uint256) -> bool:
 
 @external
 def tend():
-    assert msg.sender in [self.keeper, self.strategist, self.governance]
-    self.adjustPosition()
+    pass
 
 
 @view
@@ -219,10 +217,7 @@ def harvest():
     else:
         self.prepareReturn()
 
-    self.reserve = max(self.reserve, self.want.balanceOf(self))
-
-    self.vault.sync(self.want.balanceOf(self) - self.reserve)
-
+    self.vault.sync(self.want.balanceOf(self))
     self.adjustPosition()
 
 
@@ -241,8 +236,7 @@ def setEmergencyExit():
     self.emergencyExit = True
     self.exitPosition()
     self.vault.revokeStrategy()
-    self.reserve = max(self.reserve, self.want.balanceOf(self))
-    self.vault.sync(self.want.balanceOf(self) - self.reserve)
+    self.vault.sync(self.want.balanceOf(self))
 
 
 @external
