@@ -154,40 +154,49 @@ def expectedReturn() -> uint256:
 @internal
 def prepareReturn():
     self.staking.getReward()
-    self.uni_wrap.swap(
-        self.reward.address,
-        self.token0.address,
-        self.reward.balanceOf(self) / 2,
-        0,
-        self
-    )
-    self.uni_wrap.swap(
-        self.reward.address,
-        self.token1.address,
-        self.reward.balanceOf(self),
-        0,
-        self
-    )
-    self.uni_router.addLiquidity(
-        self.token0.address,
-        self.token1.address,
-        self.token0.balanceOf(self),
-        self.token1.balanceOf(self),
-        0,
-        0,
-        self,
-        block.timestamp
-    )
+
+    if self.reward.balanceOf(self) > 0:
+        self.uni_wrap.swap(
+            self.reward.address,
+            self.token0.address,
+            self.reward.balanceOf(self) / 2,
+            0,
+            self
+        )
+
+        self.uni_wrap.swap(
+            self.reward.address,
+            self.token1.address,
+            self.reward.balanceOf(self),
+            0,
+            self
+        )
+
+    if self.want.balanceOf(self) > 0:
+        self.uni_router.addLiquidity(
+            self.token0.address,
+            self.token1.address,
+            self.token0.balanceOf(self),
+            self.token1.balanceOf(self),
+            0,
+            0,
+            self,
+            block.timestamp
+        )
 
 
 @internal
 def adjustPosition():
-    self.staking.stake(self.want.balanceOf(self))
+    amount: uint256 = self.want.balanceOf(self)
+    if amount > 0:
+        self.staking.stake(amount)
 
 
 @internal
 def exitPosition():
-    self.staking.exit()
+    amount: uint256 = self.staking.balanceOf(self)
+    if amount > 0:
+        self.staking.exit()
     self.prepareReturn()
 
 
@@ -205,7 +214,7 @@ def tend():
 @view
 @external
 def harvestTrigger(gasCost: uint256) -> bool:
-    return ERC20(self.want.address).balanceOf(self) > 0
+    return self.want.balanceOf(self) > 0
 
 
 @external
