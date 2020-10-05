@@ -132,8 +132,8 @@ def setKeeper(_keeper: address):
 
 
 @view
-@external
-def expectedReturn() -> uint256:
+@internal
+def _expectedReturn() -> uint256:
     earned: uint256 = self.staking.earned(self)
     amount0: uint256 = self.uni_wrap.quote(self.reward.address, self.token0.address, earned / 2)
     amount1: uint256 = self.uni_wrap.quote(self.reward.address, self.token1.address, earned / 2)
@@ -149,6 +149,12 @@ def expectedReturn() -> uint256:
         amount1 * supply / reserve1,
     )
     return liquidity
+
+
+@view
+@external
+def expectedReturn() -> uint256:
+    return self._expectedReturn()
 
 
 @internal
@@ -214,7 +220,7 @@ def tend():
 @view
 @external
 def harvestTrigger(gasCost: uint256) -> bool:
-    return self.want.balanceOf(self) > 0
+    return self.want.balanceOf(self) > 0 or self._expectedReturn() > 0
 
 
 @external
