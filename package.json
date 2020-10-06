@@ -10,9 +10,9 @@
         "pretty-quick": "^3.0.2"
     },
     "scripts": {
-        "lint": "pretty-quick --pattern '**/*.*(sol|json)' --verbose",
-        "lint:check": "prettier --check **/*.sol **/*.json",
-        "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose"
+        "lint": "pretty-quick --pattern '**/*.*(sol|json|md)' --verbose",
+        "lint:check": "prettier --check **/*.sol **/*.json **/*.md",
+        "lint:fix": "pretty-quick --pattern '**/*.*(sol|json|md)' --staged --verbose"
     },
     "husky": {
         "hooks": {
