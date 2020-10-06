@@ -47,7 +47,7 @@ brownie test -s
 
 Run tests with coverage:
 
-```
+```bash
 brownie test -s --coverage
 ```
 
