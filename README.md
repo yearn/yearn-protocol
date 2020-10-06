@@ -1,55 +1,90 @@
-# [Yearn Protocol](https://yearn.finance/) &middot; [![GitHub license](https://img.shields.io/badge/license-AGPL-blue.svg)](https://github.com/iearn-finance/yearn-protocol/blob/master/LICENSE)
+# Yearn Protocol
+
+[![GitHub license](https://img.shields.io/badge/license-AGPL-blue.svg)](https://github.com/iearn-finance/yearn-protocol/blob/master/LICENSE)
+![Lint](https://github.com/iearn-finance/yearn-protocol/workflows/Lint/badge.svg)
+![Test](https://github.com/iearn-finance/yearn-protocol/workflows/Test/badge.svg)
 
 Yearn Protocol is a set of Ethereum Smart Contracts focused on creating a simple way to generate high risk-adjusted returns for depositors of various assets via best-in-class lending protocols, liquidity pools, and community-made yield farming strategies on Ethereum.
 
 Before getting started with this repo, please read:
 
-* [Andre's Overview Blog Post](https://medium.com/iearn/yearn-finance-v2-af2c6a6a3613), describing how yearn.finance works
-* The [Delegated Vaults Blog Post](https://medium.com/iearn/delegated-vaults-explained-fa81f1c3fce2), explaining how the delegated vaults work
-* [yETH Vault Explained](https://medium.com/iearn/yeth-vault-explained-c29d6b93a371), describing how the yETH vault works
+-   [Andre's Overview Blog Post](https://medium.com/iearn/yearn-finance-v2-af2c6a6a3613), describing how yearn.finance works.
+-   The [Delegated Vaults Blog Post](https://medium.com/iearn/delegated-vaults-explained-fa81f1c3fce2), explaining how the delegated vaults work.
+-   [yETH Vault Explained](https://medium.com/iearn/yeth-vault-explained-c29d6b93a371), describing how the yETH vault works.
 
-## Requirements
-Requirements for running the project: 
-* Python 3.8 local development environment and NodeJs 10.x development environment for Ganache
-* Brownie local environment setup. See here for instructions: [ETH Brownie](https://github.com/eth-brownie/brownie) 
-* Local env variables for [Etherscan API](https://etherscan.io/apis) and [Infura](https://infura.io/). ETHERSCAN_TOKEN, WEB3_INFURA_PROJECT_ID
-* Local Ganache environment installed with `npm install -g ganache-cli@6.10.1`
+### Requirements
 
-## Installation
+To run the project you need:
 
-To run the yearn protocol, pull the repository from GitHub and install its dependencies. You will need [yarn](https://yarnpkg.com/lang/en/docs/install/) or [npm](https://docs.npmjs.com/cli/install) installed.
+-   Python 3.8 local development environment and Node.js 10.x development environment for Ganache.
+-   Brownie local environment setup. See instructions: [ETH Brownie](https://github.com/eth-brownie/brownie).
+-   Local env variables for [Etherscan API](https://etherscan.io/apis) and [Infura](https://infura.io/) (`ETHERSCAN_TOKEN`, `WEB3_INFURA_PROJECT_ID`).
+-   Local Ganache environment installed with `npm install -g ganache-cli@6.11`.
 
-    git clone https://github.com/iearn-finance/yearn-protocol/
-    cd yearn-protocol
-    yarn install --lock-file # or `npm install`
+### Installation
 
+To run the yearn protocol, pull the repository from GitHub and install its dependencies. You will need [yarn](https://yarnpkg.com/lang/en/docs/install/) installed.
 
-Compile the Smart Contracts
-`brownie compile`
+```bash
+git clone https://github.com/iearn-finance/yearn-protocol
+cd yearn-protocol
+yarn install --lock-file
+```
 
-## Tests
+Compile the Smart Contracts:
 
-Running tests:
-`brownie test -s`
+```bash
+brownie compile
+```
 
-Running tests with coverage:
-`brownie test -s --coverage`
+### Tests
 
-## Linting
-Checking linter rules
-`yarn lint:check`
+Run tests:
 
-Fixing linter rules
-`yarn lint:fix`
+```bash
+brownie test -s
+```
 
-## Security
+Run tests with coverage:
 
-For security concerns, please visit [Bug Bounty](https://github.com/iearn-finance/yearn-protocol/blob/develop/SECURITY.md) or email [yearn-security@pm.me](yearn-security@pm.me).
+```
+brownie test -s --coverage
+```
 
-## Documentation
+### Formatting
 
-You can read more about yearn finance on our [Documentation Site](https://docs.yearn.finance/).
+Check linter rules for `*.json` and `*.sol` files:
 
-## Discussion
+```bash
+yarn lint:check
+```
 
-For questions not covered in the docs regarding the Yearn Protocol, please visit [our Discord server](https://discord.gg/CY3RdS).
+Fix linter errors for `*.json` and `*.sol` files:
+
+```bash
+yarn lint:fix
+```
+
+Check linter rules for `*.py` files:
+
+```bash
+black . --check --config black-config.toml
+```
+
+Fix linter errors for `*.py` files:
+
+```bash
+black . --config black-config.toml
+```
+
+### Security
+
+For security concerns, please visit [Bug Bounty](https://github.com/iearn-finance/yearn-protocol/blob/develop/SECURITY.md).
+
+### Documentation
+
+You can read more about yearn finance on our documentation [webpage](https://docs.yearn.finance).
+
+### Discussion
+
+For questions not covered in the docs, please visit [our Discord server](http://discord.yearn.finance).
