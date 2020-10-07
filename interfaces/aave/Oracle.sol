@@ -1,4 +1,4 @@
-pragma solidity ^0.5.16;
+pragma solidity ^0.5.17;
 
 interface Oracle {
     function getAssetPrice(address reserve) external view returns (uint256);
