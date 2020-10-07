@@ -13,7 +13,11 @@ def test_controller_deployment(gov, rewards, Controller):
 
 @pytest.mark.parametrize(
     "getter,setter,val",
-    [("split", "setSplit", 1000), ("onesplit", "setOneSplit", None), ("governance", "setGovernance", None),],
+    [
+        ("split", "setSplit", 1000),
+        ("onesplit", "setOneSplit", None),
+        ("governance", "setGovernance", None),
+    ],
 )
 def test_controller_setParams(accounts, gov, rewards, getter, setter, val, Controller):
     if not val:
