@@ -102,6 +102,8 @@ contract StrategyProxy {
         proxy.execute(crv, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
     }
 
+    // Forces execution to fail with an invalid_opcode.
+    // It might help with correct gas estimations.
     function throwInvalidOpcode() public pure {
         bool[] memory array = new bool[](0);
         array[0] = array[0];
