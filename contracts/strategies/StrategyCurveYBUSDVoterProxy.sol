@@ -30,7 +30,7 @@ contract StrategyCurveYBUSDVoterProxy {
     address public constant curve = address(0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27);
 
     address public constant gauge = address(0x69Fb7c45726cfE2baDeE8317005d3F94bE838840);
-    address public constant proxy = address(0x5886E475e163f78CF63d6683AbC7fe8516d12081);
+    address public constant proxy = address(0x7A99923aA2efa71178BB11294349EC1F6b23a814);
     address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
 
     uint256 public keepCRV = 1000;
