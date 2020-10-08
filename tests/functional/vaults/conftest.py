@@ -2,11 +2,6 @@ import pytest
 import brownie
 
 
-@pytest.fixture(scope="module", autouse=True)
-def shared_setup(module_isolation):
-    pass
-
-
 # Define the actual vault deployment test as a fixture so it can be reused
 # across the specific vaults under test. All vaults are broken out into their
 # own file so they can be parallelized with xdist.

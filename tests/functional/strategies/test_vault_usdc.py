@@ -6,11 +6,6 @@ from brownie import StrategyVaultUSDC
 STRATEGIES = [StrategyVaultUSDC]
 
 
-@pytest.fixture(scope="module", autouse=True)
-def shared_setup(module_isolation):
-    pass
-
-
 @pytest.mark.parametrize("Strategy", STRATEGIES)
 def test_strategy_deployment(gov, controller, Strategy, check_strategy_deployment):
     check_strategy_deployment(gov, controller, Strategy)

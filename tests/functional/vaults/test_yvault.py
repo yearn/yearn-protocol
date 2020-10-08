@@ -6,11 +6,6 @@ from brownie import yVault
 VAULTS = [yVault]
 
 
-@pytest.fixture(scope="module", autouse=True)
-def shared_setup(module_isolation):
-    pass
-
-
 @pytest.mark.parametrize("Vault", VAULTS)
 def test_vault_deployment(gov, token, controller, Vault, check_vault_deployment):
     check_vault_deployment(gov, token, controller, Vault)

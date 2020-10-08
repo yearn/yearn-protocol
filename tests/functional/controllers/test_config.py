@@ -2,11 +2,6 @@ import pytest
 import brownie
 
 
-@pytest.fixture(scope="module", autouse=True)
-def shared_setup(module_isolation):
-    pass
-
-
 def test_controller_deployment(gov, rewards, Controller):
     controller = gov.deploy(Controller, rewards)
     # Double check all the deployment variable values
