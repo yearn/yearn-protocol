@@ -1,6 +1,11 @@
 import pytest
 
 
+@pytest.fixture(scope="module", autouse=True)
+def shared_setup(module_isolation):
+    pass
+
+
 @pytest.fixture
 def oracle(a, BTCOSMedianizer):
     yield a[0].deploy(BTCOSMedianizer)

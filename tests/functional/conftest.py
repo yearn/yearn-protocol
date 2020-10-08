@@ -1,6 +1,11 @@
 import pytest
 
 
+@pytest.fixture(scope="module", autouse=True)
+def shared_setup(module_isolation):
+    pass
+
+
 @pytest.fixture
 def rewards(a):
     yield a[2]
