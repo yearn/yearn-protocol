@@ -1,6 +1,6 @@
 def test_sbtc_fix(ychad, accounts, Contract):
     strategist = accounts.at('0x1ea056C13F8ccC981E51c5f1CDF87476666D0A74', force=True)
-    want = '0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3'
+    want = Contract('0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3')
     vault = Contract('0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6')
     controller = Contract('0x9E65Ad11b299CA0Abefc2799dDB6314Ef2d91080')
     strategy = Contract('0xeB8DEfc602E20b113B2E5a30498FB6E6A46f214F')
@@ -11,6 +11,8 @@ def test_sbtc_fix(ychad, accounts, Contract):
     controller.setStrategy(want, strategy, {"from": ychad})
     strategy_proxy.approveStrategy(strategy, {"from": ychad})
     
+    before = want.balanceOf(vault)
     vault.earn({'from': ychad})
     strategy.harvest({'from': strategist})
     controller.withdrawAll(want, {'from': ychad})
+    assert want.balanceOf(vault) >= before
