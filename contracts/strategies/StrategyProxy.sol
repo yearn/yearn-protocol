@@ -84,7 +84,7 @@ contract StrategyProxy {
         proxy.execute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, 0));
         proxy.execute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, _balance));
         (bool success, ) = proxy.execute(_gauge, 0, abi.encodeWithSignature("deposit(uint256)", _balance));
-        if (!success) assert(false);
+        assert(success);
     }
 
     function harvest(address _gauge) external {
