@@ -168,6 +168,7 @@ contract StrategyCurve3CrvVoterProxy {
             IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
             deposit();
         }
+        VoterProxy(proxy).lock();
     }
 
     function balanceOfWant() public view returns (uint256) {

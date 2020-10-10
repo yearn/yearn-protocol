@@ -172,6 +172,7 @@ contract StrategyCurveYBUSDVoterProxy {
             IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
             deposit();
         }
+        VoterProxy(proxy).lock();
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
