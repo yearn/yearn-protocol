@@ -12,7 +12,9 @@ def test_sbtc_fix(ychad, accounts, Contract):
     strategy_proxy.approveStrategy(strategy, {"from": ychad})
     
     before = want.balanceOf(vault)
+    vbefore = vault.balance()
     vault.earn({'from': ychad})
     strategy.harvest({'from': strategist})
     controller.withdrawAll(want, {'from': ychad})
     assert want.balanceOf(vault) >= before
+    assert vault.balance() >= vbefore
