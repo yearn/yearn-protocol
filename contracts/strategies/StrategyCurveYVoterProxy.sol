@@ -30,7 +30,6 @@ contract StrategyCurveYVoterProxy {
     address public constant curve = address(0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51);
 
     address public constant gauge = address(0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1);
-    address public constant proxy = address(0x7A99923aA2efa71178BB11294349EC1F6b23a814);
     address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
 
     uint256 public keepCRV = 1000;
@@ -41,6 +40,8 @@ contract StrategyCurveYVoterProxy {
 
     uint256 public withdrawalFee = 50;
     uint256 public constant withdrawalMax = 10000;
+
+    address public proxy;
 
     address public governance;
     address public controller;
@@ -74,6 +75,11 @@ contract StrategyCurveYVoterProxy {
     function setPerformanceFee(uint256 _performanceFee) external {
         require(msg.sender == governance, "!governance");
         performanceFee = _performanceFee;
+    }
+
+    function setProxy(address _proxy) external {
+        require(msg.sender == governance, "!governance");
+        proxy = _proxy;
     }
 
     function deposit() public {

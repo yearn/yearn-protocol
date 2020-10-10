@@ -17,40 +17,41 @@ contract StrategyCurve3CrvVoterProxy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
-    
-    address constant public want = address(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
-    address constant public crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
-    address constant public uni = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-    address constant public weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> dai route
-    
-    address constant public dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
-    address constant public curve = address(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
 
-    address constant public gauge = address(0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A);
-    address public constant proxy = address(0x7A99923aA2efa71178BB11294349EC1F6b23a814);
+    address public constant want = address(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
+    address public constant crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
+    address public constant uni = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> dai route
+
+    address public constant dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
+    address public constant curve = address(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
+
+    address public constant gauge = address(0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A);
     address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
 
     uint256 public keepCRV = 1000;
     uint256 public performanceFee = 500;
     uint256 public withdrawalFee = 50;
     uint256 public constant FEE_DENOMINATOR = 10000;
-    
+
+    address public proxy;
+
     address public governance;
     address public controller;
     address public strategist;
     address public keeper;
-    
+
     constructor(address _controller) public {
         governance = msg.sender;
         strategist = msg.sender;
         keeper = msg.sender;
         controller = _controller;
     }
-    
+
     function getName() external pure returns (string memory) {
         return "StrategyCurve3CrvVoterProxy";
     }
-    
+
     function setStrategist(address _strategist) external {
         require(msg.sender == governance || msg.sender == strategist, "!authorized");
         strategist = _strategist;
@@ -60,20 +61,25 @@ contract StrategyCurve3CrvVoterProxy {
         require(msg.sender == governance || msg.sender == strategist, "!authorized");
         keeper = _keeper;
     }
-    
-    function setKeepCRV(uint _keepCRV) external {
+
+    function setKeepCRV(uint256 _keepCRV) external {
         require(msg.sender == governance, "!governance");
         keepCRV = _keepCRV;
     }
-    
-    function setWithdrawalFee(uint _withdrawalFee) external {
+
+    function setWithdrawalFee(uint256 _withdrawalFee) external {
         require(msg.sender == governance, "!governance");
         withdrawalFee = _withdrawalFee;
     }
-    
-    function setPerformanceFee(uint _performanceFee) external {
+
+    function setPerformanceFee(uint256 _performanceFee) external {
         require(msg.sender == governance, "!governance");
         performanceFee = _performanceFee;
+    }
+
+    function setProxy(address _proxy) external {
+        require(msg.sender == governance, "!governance");
+        proxy = _proxy;
     }
 
     function deposit() public {
@@ -83,9 +89,9 @@ contract StrategyCurve3CrvVoterProxy {
             VoterProxy(proxy).deposit(gauge, want);
         }
     }
-    
+
     // Controller only function for creating additional rewards from dust
-    function withdraw(IERC20 _asset) external returns (uint balance) {
+    function withdraw(IERC20 _asset) external returns (uint256 balance) {
         require(msg.sender == controller, "!controller");
         require(want != address(_asset), "want");
         require(crv != address(_asset), "crv");
@@ -93,18 +99,18 @@ contract StrategyCurve3CrvVoterProxy {
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(controller, balance);
     }
-    
+
     // Withdraw partial funds, normally used with a vault withdrawal
-    function withdraw(uint _amount) external {
+    function withdraw(uint256 _amount) external {
         require(msg.sender == controller, "!controller");
-        uint _balance = IERC20(want).balanceOf(address(this));
+        uint256 _balance = IERC20(want).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_amount.sub(_balance));
             _amount = _amount.add(_balance);
         }
-        
-        uint _fee = _amount.mul(withdrawalFee).div(FEE_DENOMINATOR);
-        
+
+        uint256 _fee = _amount.mul(withdrawalFee).div(FEE_DENOMINATOR);
+
         IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
         address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
@@ -114,19 +120,19 @@ contract StrategyCurve3CrvVoterProxy {
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
         return VoterProxy(proxy).withdraw(gauge, want, _amount);
     }
-    
+
     // Withdraw all funds, normally used when migrating strategies
-    function withdrawAll() external returns (uint balance) {
+    function withdrawAll() external returns (uint256 balance) {
         require(msg.sender == controller, "!controller");
         _withdrawAll();
-        
+
         balance = IERC20(want).balanceOf(address(this));
-        
+
         address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
         IERC20(want).safeTransfer(_vault, balance);
     }
-    
+
     function _withdrawAll() internal {
         VoterProxy(proxy).withdrawAll(gauge, want);
     }
@@ -164,23 +170,23 @@ contract StrategyCurve3CrvVoterProxy {
         }
     }
 
-    function balanceOfWant() public view returns (uint) {
+    function balanceOfWant() public view returns (uint256) {
         return IERC20(want).balanceOf(address(this));
     }
 
     function balanceOfPool() public view returns (uint256) {
         return VoterProxy(proxy).balanceOf(gauge);
     }
-    
+
     function balanceOf() public view returns (uint256) {
         return balanceOfWant().add(balanceOfPool());
     }
-    
+
     function setGovernance(address _governance) external {
         require(msg.sender == governance, "!governance");
         governance = _governance;
     }
-    
+
     function setController(address _controller) external {
         require(msg.sender == governance, "!governance");
         controller = _controller;
