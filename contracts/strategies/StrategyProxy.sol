@@ -44,7 +44,8 @@ contract StrategyProxy {
     }
 
     function lock() external {
-        proxy.increaseAmount(IERC20(crv).balanceOf(address(proxy)));
+        uint256 amount = IERC20(crv).balanceOf(address(proxy));
+        if (amount > 0) proxy.increaseAmount(amount);
     }
 
     function vote(address _gauge, uint256 _amount) public {
