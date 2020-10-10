@@ -38,10 +38,12 @@ contract StrategyCurve3CrvVoterProxy {
     address public governance;
     address public controller;
     address public strategist;
+    address public keeper;
     
     constructor(address _controller) public {
         governance = msg.sender;
         strategist = msg.sender;
+        keeper = msg.sender;
         controller = _controller;
     }
     
@@ -52,6 +54,11 @@ contract StrategyCurve3CrvVoterProxy {
     function setStrategist(address _strategist) external {
         require(msg.sender == governance || msg.sender == strategist, "!authorized");
         strategist = _strategist;
+    }
+
+    function setKeeper(address _keeper) external {
+        require(msg.sender == governance || msg.sender == strategist, "!authorized");
+        keeper = _keeper;
     }
     
     function setKeepCRV(uint _keepCRV) external {
@@ -125,7 +132,7 @@ contract StrategyCurve3CrvVoterProxy {
     }
 
     function harvest() public {
-        require(msg.sender == strategist || msg.sender == governance, "!authorized");
+        require(msg.sender == strategist || msg.sender == governance || msg.sender == keeper, "!authorized");
         VoterProxy(proxy).harvest(gauge);
         uint256 _crv = IERC20(crv).balanceOf(address(this));
         if (_crv > 0) {
