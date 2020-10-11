@@ -30,7 +30,8 @@ contract StrategyCurve3CrvVoterProxy {
     address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
 
     uint256 public keepCRV = 1000;
-    uint256 public performanceFee = 500;
+    uint256 public performanceFee = 450;
+    uint256 public strategistReward = 50;
     uint256 public withdrawalFee = 50;
     uint256 public constant FEE_DENOMINATOR = 10000;
 
@@ -39,7 +40,6 @@ contract StrategyCurve3CrvVoterProxy {
     address public governance;
     address public controller;
     address public strategist;
-    address public keeper;
 
     uint256 public earned;  // lifetime strategy earnings denominated in `want` token
 
@@ -48,7 +48,6 @@ contract StrategyCurve3CrvVoterProxy {
     constructor(address _controller) public {
         governance = msg.sender;
         strategist = msg.sender;
-        keeper = msg.sender;
         controller = _controller;
     }
 
@@ -59,11 +58,6 @@ contract StrategyCurve3CrvVoterProxy {
     function setStrategist(address _strategist) external {
         require(msg.sender == governance || msg.sender == strategist, "!authorized");
         strategist = _strategist;
-    }
-
-    function setKeeper(address _keeper) external {
-        require(msg.sender == governance || msg.sender == strategist, "!authorized");
-        keeper = _keeper;
     }
 
     function setKeepCRV(uint256 _keepCRV) external {
@@ -79,6 +73,11 @@ contract StrategyCurve3CrvVoterProxy {
     function setPerformanceFee(uint256 _performanceFee) external {
         require(msg.sender == governance, "!governance");
         performanceFee = _performanceFee;
+    }
+
+    function setStrategistReward(uint _strategistReward) external {
+        require(msg.sender == governance, "!governance");
+        strategistReward = _strategistReward;
     }
 
     function setProxy(address _proxy) external {
@@ -142,7 +141,7 @@ contract StrategyCurve3CrvVoterProxy {
     }
 
     function harvest() public {
-        require(msg.sender == strategist || msg.sender == governance || msg.sender == keeper, "!authorized");
+        require(msg.sender == strategist || msg.sender == governance, "!authorized");
         VoterProxy(proxy).harvest(gauge);
         uint256 _crv = IERC20(crv).balanceOf(address(this));
         if (_crv > 0) {
@@ -169,7 +168,9 @@ contract StrategyCurve3CrvVoterProxy {
         uint256 _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
             uint256 _fee = _want.mul(performanceFee).div(FEE_DENOMINATOR);
+            uint256 _reward = _want.mul(strategistReward).div(FEE_DENOMINATOR);
             IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
+            IERC20(want).safeTransfer(strategist, _reward);
             deposit();
         }
         VoterProxy(proxy).lock();
