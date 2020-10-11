@@ -47,9 +47,9 @@ contract StrategyCurveYVoterProxy {
     address public controller;
     address public strategist;
 
-    uint256 public earned;  // lifetime strategy earnings denominated in `want` token
+    uint256 public earned; // lifetime strategy earnings denominated in `want` token
 
-    event Harvested(uint wantEarned, uint lifetimeEarned);
+    event Harvested(uint256 wantEarned, uint256 lifetimeEarned);
 
     constructor(address _controller) public {
         governance = msg.sender;
