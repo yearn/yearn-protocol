@@ -15,7 +15,7 @@ import "../../interfaces/curve/Curve.sol";
 import "../../interfaces/yearn/Token.sol";
 import "../../interfaces/yearn/VoterProxy.sol";
 
-contract StrategyCurveYBUSDVoterProxy {
+contract StrategyCurveBUSDVoterProxy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -54,7 +54,7 @@ contract StrategyCurveYBUSDVoterProxy {
     }
 
     function getName() external pure returns (string memory) {
-        return "StrategyCurveYBUSDVoterProxy";
+        return "StrategyCurveBUSDVoterProxy";
     }
 
     function setStrategist(address _strategist) external {
