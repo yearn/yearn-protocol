@@ -46,6 +46,10 @@ contract StrategyCurveBTCVoterProxy {
     address public controller;
     address public strategist;
 
+    uint256 public earned;  // lifetime strategy earnings denominated in `want` token
+
+    event Harvested(uint wantEarned, uint lifetimeEarned);
+
     constructor(address _controller) public {
         governance = msg.sender;
         strategist = msg.sender;
@@ -167,6 +171,8 @@ contract StrategyCurveBTCVoterProxy {
             deposit();
         }
         VoterProxy(proxy).lock();
+        earned = earned.add(_want);
+        emit Harvested(_want, earned);
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
