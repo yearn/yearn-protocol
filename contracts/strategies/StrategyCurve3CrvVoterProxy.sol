@@ -41,6 +41,8 @@ contract StrategyCurve3CrvVoterProxy {
     address public strategist;
     address public keeper;
 
+    event Harvested(address rewardToken, uint rewardAmount, address wantToken, uint wantAmount);
+
     constructor(address _controller) public {
         governance = msg.sender;
         strategist = msg.sender;
@@ -169,6 +171,7 @@ contract StrategyCurve3CrvVoterProxy {
             deposit();
         }
         VoterProxy(proxy).lock();
+        emit Harvested(crv, _crv, want, _want);
     }
 
     function balanceOfWant() public view returns (uint256) {
