@@ -5,8 +5,9 @@ import brownie
 from brownie import (
     StrategyCreamYFI,
     StrategyCurveBTCVoterProxy,
-    StrategyCurveYBUSDVoterProxy,
+    StrategyCurveBUSDVoterProxy,
     StrategyCurveYVoterProxy,
+    StrategyCurve3CrvVoterProxy,
     StrategyDAICurve,
     StrategyDForceUSDC,
     StrategyDForceUSDT,
@@ -18,8 +19,9 @@ from brownie import (
 STRATEGIES = [
     StrategyCreamYFI,
     StrategyCurveBTCVoterProxy,
-    StrategyCurveYBUSDVoterProxy,
+    StrategyCurveBUSDVoterProxy,
     StrategyCurveYVoterProxy,
+    StrategyCurve3CrvVoterProxy,
     StrategyDAICurve,
     StrategyDForceUSDC,
     StrategyDForceUSDT,
