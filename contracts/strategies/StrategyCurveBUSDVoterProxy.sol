@@ -15,7 +15,7 @@ import "../../interfaces/curve/Curve.sol";
 import "../../interfaces/yearn/Token.sol";
 import "../../interfaces/yearn/VoterProxy.sol";
 
-contract StrategyCurveYBUSDVoterProxy {
+contract StrategyCurveBUSDVoterProxy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -30,7 +30,6 @@ contract StrategyCurveYBUSDVoterProxy {
     address public constant curve = address(0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27);
 
     address public constant gauge = address(0x69Fb7c45726cfE2baDeE8317005d3F94bE838840);
-    address public constant proxy = address(0x5886E475e163f78CF63d6683AbC7fe8516d12081);
     address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
 
     uint256 public keepCRV = 1000;
@@ -41,6 +40,8 @@ contract StrategyCurveYBUSDVoterProxy {
 
     uint256 public withdrawalFee = 50;
     uint256 public constant withdrawalMax = 10000;
+
+    address public proxy;
 
     address public governance;
     address public controller;
@@ -53,7 +54,7 @@ contract StrategyCurveYBUSDVoterProxy {
     }
 
     function getName() external pure returns (string memory) {
-        return "StrategyCurveYBUSDVoterProxy";
+        return "StrategyCurveBUSDVoterProxy";
     }
 
     function setStrategist(address _strategist) external {
@@ -74,6 +75,11 @@ contract StrategyCurveYBUSDVoterProxy {
     function setPerformanceFee(uint256 _performanceFee) external {
         require(msg.sender == governance, "!governance");
         performanceFee = _performanceFee;
+    }
+
+    function setProxy(address _proxy) external {
+        require(msg.sender == governance, "!governance");
+        proxy = _proxy;
     }
 
     function deposit() public {
@@ -166,6 +172,7 @@ contract StrategyCurveYBUSDVoterProxy {
             IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
             deposit();
         }
+        VoterProxy(proxy).lock();
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {

@@ -44,17 +44,13 @@ contract StrategyProxy {
     }
 
     function lock() external {
-        proxy.increaseAmount(IERC20(crv).balanceOf(address(proxy)));
+        uint256 amount = IERC20(crv).balanceOf(address(proxy));
+        if (amount > 0) proxy.increaseAmount(amount);
     }
 
     function vote(address _gauge, uint256 _amount) public {
         require(strategies[msg.sender], "!strategy");
         proxy.execute(gauge, 0, abi.encodeWithSignature("vote_for_gauge_weights(address,uint256)", _gauge, _amount));
-    }
-
-    function max() external {
-        require(strategies[msg.sender], "!strategy");
-        vote(y, 10000);
     }
 
     function withdraw(
@@ -81,13 +77,15 @@ contract StrategyProxy {
     }
 
     function deposit(address _gauge, address _token) external {
+        require(strategies[msg.sender], "!strategy");
         uint256 _balance = IERC20(_token).balanceOf(address(this));
         IERC20(_token).safeTransfer(address(proxy), _balance);
-
         _balance = IERC20(_token).balanceOf(address(proxy));
+
         proxy.execute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, 0));
         proxy.execute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, _balance));
-        proxy.execute(_gauge, 0, abi.encodeWithSignature("deposit(uint256)", _balance));
+        (bool success, ) = proxy.execute(_gauge, 0, abi.encodeWithSignature("deposit(uint256)", _balance));
+        if (!success) assert(false);
     }
 
     function harvest(address _gauge) external {

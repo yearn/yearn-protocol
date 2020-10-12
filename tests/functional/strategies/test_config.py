@@ -5,8 +5,9 @@ import brownie
 from brownie import (
     StrategyCreamYFI,
     StrategyCurveBTCVoterProxy,
-    StrategyCurveYBUSDVoterProxy,
+    StrategyCurveBUSDVoterProxy,
     StrategyCurveYVoterProxy,
+    StrategyCurve3CrvVoterProxy,
     StrategyDAICurve,
     StrategyDForceUSDC,
     StrategyDForceUSDT,
@@ -18,8 +19,9 @@ from brownie import (
 STRATEGIES = [
     StrategyCreamYFI,
     StrategyCurveBTCVoterProxy,
-    StrategyCurveYBUSDVoterProxy,
+    StrategyCurveBUSDVoterProxy,
     StrategyCurveYVoterProxy,
+    StrategyCurve3CrvVoterProxy,
     StrategyDAICurve,
     StrategyDForceUSDC,
     StrategyDForceUSDT,
@@ -61,7 +63,7 @@ def test_strategy_setParams(accounts, gov, controller, getter, setter, val, Stra
         return  # Some combinations aren't valid
 
     # Only governance can set this param
-    with brownie.reverts("!governance"):
+    with brownie.reverts():
         getattr(strategy, setter)(val, {"from": accounts[1]})
     getattr(strategy, setter)(val, {"from": gov})
     assert getattr(strategy, getter)() == val
