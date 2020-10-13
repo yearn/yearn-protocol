@@ -27,10 +27,11 @@ security related issues according to the
 and [giving details](https://github.com/RD-Crypto-Spec/Responsible-Disclosure#giving-details)
 guidelines.
 
-For all security related issues, Yearn has 3 main points of contact:
+For all security related issues, Yearn has four main points of contact:
 
 | Contact                | Public key                                                                                                   | Email                             | Keybase                                         |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------- | ----------------------------------------------- |
+| banteg                 | [PGP](https://github.com/iearn-finance/yearn-security/blob/master/keys/banteg.asc)                           | banteeg at gmail.com              | [@banteg](https://keybase.io/banteg/chat)       |
 | milkyklim              | [PGP](https://github.com/iearn-finance/yearn-security/blob/master/keys/milkyklim.asc)                        | y at milkyklim.com                | [@milkyklim](https://keybase.io/milkyklim/chat) |
 | Doggie Boy / fubuloubu | [PGP](https://github.com/iearn-finance/yearn-security/blob/master/keys/publickey.yearn-security%40pm.me.asc) | yearn-security at pm.me           | N/A                                             |
 | Daniel Lehnberg        | [PGP](https://github.com/iearn-finance/yearn-security/blob/master/keys/lehnberg.asc)                         | daniel.lehnberg at protonmail.com | [@lehnberg](https://keybase.io/lehnberg/chat)   |
