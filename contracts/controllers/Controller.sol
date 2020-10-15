@@ -99,7 +99,7 @@ contract Controller {
             delete strategyToToken[_current];
         }
         strategies[_token] = _strategy;
-        strategyToToken[_strategy] = token;
+        strategyToToken[_strategy] = _token;
     }
 
     function earn(address _token, uint256 _amount) public {
