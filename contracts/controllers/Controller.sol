@@ -23,6 +23,7 @@ contract Controller {
     address public rewards;
     mapping(address => address) public vaults;
     mapping(address => address) public strategies;
+    mapping(address => address) public strategyToToken;
     mapping(address => mapping(address => address)) public converters;
 
     mapping(address => mapping(address => bool)) public approvedStrategies;
@@ -90,12 +91,15 @@ contract Controller {
     function setStrategy(address _token, address _strategy) public {
         require(msg.sender == strategist || msg.sender == governance, "!strategist");
         require(approvedStrategies[_token][_strategy] == true, "!approved");
+        require(strategyToToken[_strategy] == address(0), "strategy already in use");
 
         address _current = strategies[_token];
         if (_current != address(0)) {
             Strategy(_current).withdrawAll();
+            delete strategyToToken[_current];
         }
         strategies[_token] = _strategy;
+        strategyToToken[_strategy] = token;
     }
 
     function earn(address _token, uint256 _amount) public {
