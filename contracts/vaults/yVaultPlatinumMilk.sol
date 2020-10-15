@@ -10,7 +10,7 @@ import "openzeppelinV2/ownership/Ownable.sol";
 
 import "../../interfaces/yearn/IController.sol";
 
-contract yVault is ERC20, ERC20Detailed {
+contract yVaultPlatinumMilk is ERC20, ERC20Detailed {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;

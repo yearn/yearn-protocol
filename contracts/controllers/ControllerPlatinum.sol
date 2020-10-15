@@ -11,7 +11,10 @@ import "../../interfaces/yearn/Converter.sol";
 import "../../interfaces/yearn/OneSplitAudit.sol";
 import "../../interfaces/yearn/Strategy.sol";
 
-contract Controller {
+//TODO
+//1. Converter handle contract
+
+contract ControllerPlatinum {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;

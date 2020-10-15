@@ -1,5 +1,5 @@
 {
-    "name": "yearn-protocol",
+    "name": "platinum-yearn",
     "devDependencies": {
         "@commitlint/cli": "^11.0.0",
         "@commitlint/config-conventional": "^11.0.0",
@@ -9,15 +9,16 @@
         "prettier-plugin-solidity": "^1.0.0-alpha.57",
         "pretty-quick": "^3.0.2"
     },
+    "dependencies": {
+        "truffle": "5.1.46",
+        "ganache-cli": "6.12.0",
+        "openzeppelinV2": "npm:@openzeppelin/contracts@2.5.1",
+        "openzeppelinV3": "npm:@openzeppelin/contracts@3.1.0"
+    },
     "scripts": {
         "lint": "pretty-quick --pattern '**/*.*(sol|json|md)' --verbose",
         "lint:check": "prettier --check **/*.sol **/*.json **/*.md",
-        "lint:fix": "pretty-quick --pattern '**/*.*(sol|json|md)' --staged --verbose"
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "yarn lint:fix",
-            "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-        }
+        "lint:fix": "pretty-quick --pattern '**/*.*(sol|json|md)' --staged --verbose",
+        "truffle-local-compile": "node_modules/.bin/truffle compile"
     }
 }

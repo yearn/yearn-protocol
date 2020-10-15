@@ -1,6 +1,6 @@
 pragma solidity ^0.5.17;
 
-import "@openzeppelinV2/contracts/math/SafeMath.sol";
+import "openzeppelinV2/math/SafeMath.sol";
 
 import "../../interfaces/maker/OracleSecurityModule.sol";
 
