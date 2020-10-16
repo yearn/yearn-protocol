@@ -46,7 +46,7 @@ contract StrategyCreamUNI {
     }
 
     function getName() external pure returns (string memory) {
-        return "StrategyCreamCRV";
+        return "StrategyCreamUNI";
     }
 
     function setStrategist(address _strategist) external {
