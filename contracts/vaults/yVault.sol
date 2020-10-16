@@ -109,9 +109,7 @@ contract yVault is ERC20, ERC20Detailed {
             IController(controller).withdraw(address(token), _withdraw);
             uint256 _after = token.balanceOf(address(this));
             uint256 _diff = _after.sub(b);
-            if (_diff < _withdraw) {
-                r = b.add(_diff);
-            }
+            require(_diff >= _withdraw, "token withdraw failed");
         }
 
         token.safeTransfer(msg.sender, r);
