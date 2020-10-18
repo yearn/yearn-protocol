@@ -87,7 +87,7 @@ def test_deposit(strategy, vault, token, cToken, gov):
     assert vault.balanceOf(user) >= Wei("1000 ether")
 
 
-def test_simple_withdraw(strategy, vault, token, cToken, gov):
+def test_vault_withdraw(strategy, vault, token, cToken, gov):
     # setup accounts and expectations
     uni_holder = accounts.at(UNI_HOLDER, force=True)
     user = accounts[8]
@@ -105,7 +105,7 @@ def test_simple_withdraw(strategy, vault, token, cToken, gov):
     assert token.balanceOf(user) == Wei("100 ether")
 
 
-def test_simple_withdraw_with_fee(strategy, vault, token, cToken, gov, rewards):
+def test_vault_withdraw_with_fee(strategy, vault, token, cToken, gov, rewards):
     # setup accounts and expectations
     uni_holder = accounts.at(UNI_HOLDER, force=True)
     user = accounts[9]
@@ -122,6 +122,51 @@ def test_simple_withdraw_with_fee(strategy, vault, token, cToken, gov, rewards):
     # expectations
     assert token.balanceOf(user) >= Wei("99.5 ether")
     assert token.balanceOf(rewards) >= Wei("0.5 ether")
+
+
+def test_vault_withdraw_all(strategy, vault, token, cToken, gov, rewards):
+    # setup accounts and expectations
+    uni_holder = accounts.at(UNI_HOLDER, force=True)
+    user = accounts[8]
+    user2 = accounts[9]
+    # fund user wallet with UNI
+    token.approve(uni_holder, Wei("210 ether"), {"from": uni_holder})
+    token.transferFrom(uni_holder, user, Wei("105 ether"), {"from": uni_holder})
+    token.transferFrom(uni_holder, user2, Wei("105 ether"), {"from": uni_holder})
+    token.approve(vault, Wei("105 ether"), {"from": user})
+    token.approve(vault, Wei("105 ether"), {"from": user2})
+
+    # execute
+    vault.deposit(Wei("105 ether"), {"from": user})
+    vault.deposit(Wei("105 ether"), {"from": user2})
+    vault.earn({"from": gov})
+    vault.withdrawAll({"from": user})
+
+    # expectations
+    assert token.balanceOf(user) >= Wei("99.5 ether")
+    assert token.balanceOf(rewards) >= Wei("0.5 ether")
+
+
+def test_strategy_withdraw_all(
+    strategy, controller, vault, token, cToken, gov, rewards
+):
+    # setup accounts and expectations
+    uni_holder = accounts.at(UNI_HOLDER, force=True)
+    user = accounts[8]
+    # fund user wallet with CRV
+    token.approve(uni_holder, Wei("105 ether"), {"from": uni_holder})
+    token.transferFrom(uni_holder, user, Wei("105 ether"), {"from": uni_holder})
+    token.approve(vault, Wei("105 ether"), {"from": user})
+
+    # execute
+    vault.deposit(Wei("105 ether"), {"from": user})
+    vault.earn({"from": gov})
+    assert token.balanceOf(vault) == 0
+    controller.withdrawAll(token.address, {"from": gov})
+
+    # expectations
+    assert cToken.balanceOf(strategy) == 0
+    assert token.balanceOf(vault) >= Wei("105 ether")
 
 
 def max_approve(token, address, from_account):
