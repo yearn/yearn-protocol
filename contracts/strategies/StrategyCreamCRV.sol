@@ -161,7 +161,8 @@ contract StrategyCreamCRV {
     }
 
     function _withdrawC(uint256 amount) internal {
-        cToken(crCRV).redeem(amount);
+        // 0=success else fails with error code
+        require(cToken(crCRV).redeem(amount) == 0, "cToken redeem failed!");
     }
 
     function balanceCInToken() public view returns (uint256) {

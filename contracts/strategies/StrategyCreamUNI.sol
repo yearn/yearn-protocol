@@ -161,7 +161,8 @@ contract StrategyCreamUNI {
     }
 
     function _withdrawC(uint256 amount) internal {
-        cToken(crUNI).redeem(amount);
+        // 0=success else fails with error code
+        require(cToken(crUNI).redeem(amount) == 0, "cToken redeem failed!");
     }
 
     function balanceCInToken() public view returns (uint256) {
