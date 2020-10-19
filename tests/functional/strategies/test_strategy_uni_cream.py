@@ -82,7 +82,7 @@ def test_deposit(strategy, vault, token, cToken, gov):
     assert cToken.balanceOf(strategy) == 0
     vault.earn({"from": gov})
     assert strategy.balanceC() == cToken.balanceOf(strategy)
-    strategy.harvest({"from": gov})
+    # strategy.harvest({"from": gov})
     assert vault.getPricePerFullShare() > 1
     assert vault.balanceOf(user) >= Wei("1000 ether")
 
