@@ -7,7 +7,7 @@ import "@openzeppelinV2/contracts/math/SafeMath.sol";
 import "@openzeppelinV2/contracts/utils/Address.sol";
 import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 
-import "../../interfaces/yearn/Strategy.sol";
+import "../../interfaces/yearn/IStrategy.sol";
 import "../../interfaces/yearn/Converter.sol";
 import "../../interfaces/yearn/OneSplitAudit.sol";
 import "../../interfaces/yearn/DelegatedVault.sol";
@@ -68,7 +68,7 @@ contract DelegatedController {
         require(msg.sender == governance, "!governance");
         address _current = strategies[_vault];
         if (_current != address(0)) {
-            Strategy(_current).withdrawAll();
+            IStrategy(_current).withdrawAll();
         }
         strategies[_vault] = _strategy;
         isStrategy[_strategy] = true;
@@ -77,24 +77,24 @@ contract DelegatedController {
     }
 
     function want(address _vault) external view returns (address) {
-        return Strategy(strategies[_vault]).want();
+        return IStrategy(strategies[_vault]).want();
     }
 
     function earn(address _vault, uint256 _amount) public {
         address _strategy = strategies[_vault];
-        address _want = Strategy(_strategy).want();
+        address _want = IStrategy(_strategy).want();
         IERC20(_want).safeTransfer(_strategy, _amount);
-        Strategy(_strategy).deposit();
+        IStrategy(_strategy).deposit();
     }
 
     function balanceOf(address _vault) external view returns (uint256) {
-        return Strategy(strategies[_vault]).balanceOf();
+        return IStrategy(strategies[_vault]).balanceOf();
     }
 
     function withdrawAll(address _strategy) external {
         require(msg.sender == governance, "!governance");
         // WithdrawAll sends 'want' to 'vault'
-        Strategy(_strategy).withdrawAll();
+        IStrategy(_strategy).withdrawAll();
     }
 
     function inCaseTokensGetStuck(address _token, uint256 _amount) external {
@@ -104,7 +104,7 @@ contract DelegatedController {
 
     function inCaseStrategyGetStruck(address _strategy, address _token) external {
         require(msg.sender == governance, "!governance");
-        Strategy(_strategy).withdraw(_token);
+        IStrategy(_strategy).withdraw(_token);
         IERC20(_token).safeTransfer(governance, IERC20(_token).balanceOf(address(this)));
     }
 
@@ -114,7 +114,7 @@ contract DelegatedController {
         uint256 parts
     ) external view returns (uint256 expected) {
         uint256 _balance = IERC20(_token).balanceOf(_strategy);
-        address _want = Strategy(_strategy).want();
+        address _want = IStrategy(_strategy).want();
         (expected, ) = OneSplitAudit(onesplit).getExpectedReturn(_token, _want, _balance, parts, 0);
     }
 
@@ -126,9 +126,9 @@ contract DelegatedController {
     // Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
     function delegatedHarvest(address _strategy, uint256 parts) external {
         // This contract should never have value in it, but just incase since this is a public call
-        address _have = Strategy(_strategy).want();
+        address _have = IStrategy(_strategy).want();
         uint256 _before = IERC20(_have).balanceOf(address(this));
-        Strategy(_strategy).skim();
+        IStrategy(_strategy).skim();
         uint256 _after = IERC20(_have).balanceOf(address(this));
         if (_after > _before) {
             uint256 _amount = _after.sub(_before);
@@ -158,11 +158,11 @@ contract DelegatedController {
     ) external {
         // This contract should never have value in it, but just incase since this is a public call
         uint256 _before = IERC20(_token).balanceOf(address(this));
-        Strategy(_strategy).withdraw(_token);
+        IStrategy(_strategy).withdraw(_token);
         uint256 _after = IERC20(_token).balanceOf(address(this));
         if (_after > _before) {
             uint256 _amount = _after.sub(_before);
-            address _want = Strategy(_strategy).want();
+            address _want = IStrategy(_strategy).want();
             uint256[] memory _distribution;
             uint256 _expected;
             _before = IERC20(_want).balanceOf(address(this));
@@ -182,6 +182,6 @@ contract DelegatedController {
 
     function withdraw(address _vault, uint256 _amount) external {
         require(isVault[msg.sender] == true, "!vault");
-        Strategy(strategies[_vault]).withdraw(_amount);
+        IStrategy(strategies[_vault]).withdraw(_amount);
     }
 }

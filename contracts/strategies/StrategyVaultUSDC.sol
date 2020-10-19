@@ -11,7 +11,7 @@ import "../../interfaces/aave/Aave.sol";
 import "../../interfaces/aave/LendingPoolAddressesProvider.sol";
 
 import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/yearn/Vault.sol";
+import "../../interfaces/yearn/IVault.sol";
 
 contract StrategyVaultUSDC {
     using SafeERC20 for IERC20;
@@ -36,7 +36,7 @@ contract StrategyVaultUSDC {
         if (_balance > 0) {
             IERC20(want).safeApprove(address(vault), 0);
             IERC20(want).safeApprove(address(vault), _balance);
-            Vault(vault).deposit(_balance);
+            IVault(vault).deposit(_balance);
         }
     }
 
@@ -117,13 +117,13 @@ contract StrategyVaultUSDC {
     }
 
     function _withdrawAll() internal {
-        Vault(vault).withdraw(IERC20(vault).balanceOf(address(this)));
+        IVault(vault).withdraw(IERC20(vault).balanceOf(address(this)));
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
         uint256 _redeem = IERC20(vault).balanceOf(address(this)).mul(_amount).div(balanceSavingsInToken());
         uint256 _before = IERC20(want).balanceOf(address(this));
-        Vault(vault).withdraw(_redeem);
+        IVault(vault).withdraw(_redeem);
         uint256 _after = IERC20(want).balanceOf(address(this));
         return _after.sub(_before);
     }
@@ -133,7 +133,7 @@ contract StrategyVaultUSDC {
     }
 
     function balanceSavingsInToken() public view returns (uint256) {
-        return IERC20(vault).balanceOf(address(this)).mul(Vault(vault).getPricePerFullShare()).div(1e18);
+        return IERC20(vault).balanceOf(address(this)).mul(IVault(vault).getPricePerFullShare()).div(1e18);
     }
 
     function setGovernance(address _governance) external {
