@@ -109,7 +109,7 @@ def test_vault_withdraw_with_fee(strategy, vault, token, cToken, gov, rewards):
     # setup accounts and expectations
     uni_holder = accounts.at(UNI_HOLDER, force=True)
     user = accounts[9]
-    # fund user wallet with CRV
+    # fund user wallet with UNI
     token.approve(uni_holder, Wei("105 ether"), {"from": uni_holder})
     token.transferFrom(uni_holder, user, Wei("105 ether"), {"from": uni_holder})
     token.approve(vault, Wei("105 ether"), {"from": user})
@@ -153,7 +153,7 @@ def test_strategy_withdraw_all(
     # setup accounts and expectations
     uni_holder = accounts.at(UNI_HOLDER, force=True)
     user = accounts[8]
-    # fund user wallet with CRV
+    # fund user wallet with UNI
     token.approve(uni_holder, Wei("105 ether"), {"from": uni_holder})
     token.transferFrom(uni_holder, user, Wei("105 ether"), {"from": uni_holder})
     token.approve(vault, Wei("105 ether"), {"from": user})
