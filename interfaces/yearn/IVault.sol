@@ -18,4 +18,12 @@ interface IVault {
     function governance() external view returns (address);
 
     function getPricePerFullShare() external view returns (uint256);
+
+    function deposit(uint256) external;
+
+    function depositAll() external;
+
+    function withdraw(uint256) external;
+
+    function withdrawAll() external;
 }
