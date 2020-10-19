@@ -7,8 +7,8 @@ import "@openzeppelinV2/contracts/math/SafeMath.sol";
 import "@openzeppelinV2/contracts/utils/Address.sol";
 import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 
-import "../../interfaces/yearn/Converter.sol";
-import "../../interfaces/yearn/OneSplitAudit.sol";
+import "../../interfaces/yearn/IConverter.sol";
+import "../../interfaces/yearn/IOneSplitAudit.sol";
 import "../../interfaces/yearn/IStrategy.sol";
 
 contract Controller {
@@ -104,7 +104,7 @@ contract Controller {
         if (_want != _token) {
             address converter = converters[_token][_want];
             IERC20(_token).safeTransfer(converter, _amount);
-            _amount = Converter(converter).convert(_strategy);
+            _amount = IConverter(converter).convert(_strategy);
             IERC20(_want).safeTransfer(_strategy, _amount);
         } else {
             IERC20(_token).safeTransfer(_strategy, _amount);
@@ -138,7 +138,7 @@ contract Controller {
     ) public view returns (uint256 expected) {
         uint256 _balance = IERC20(_token).balanceOf(_strategy);
         address _want = IStrategy(_strategy).want();
-        (expected, ) = OneSplitAudit(onesplit).getExpectedReturn(_token, _want, _balance, parts, 0);
+        (expected, ) = IOneSplitAudit(onesplit).getExpectedReturn(_token, _want, _balance, parts, 0);
     }
 
     // Only allows to withdraw non-core strategy tokens ~ this is over and above normal yield
@@ -160,8 +160,8 @@ contract Controller {
             _before = IERC20(_want).balanceOf(address(this));
             IERC20(_token).safeApprove(onesplit, 0);
             IERC20(_token).safeApprove(onesplit, _amount);
-            (_expected, _distribution) = OneSplitAudit(onesplit).getExpectedReturn(_token, _want, _amount, parts, 0);
-            OneSplitAudit(onesplit).swap(_token, _want, _amount, _expected, _distribution, 0);
+            (_expected, _distribution) = IOneSplitAudit(onesplit).getExpectedReturn(_token, _want, _amount, parts, 0);
+            IOneSplitAudit(onesplit).swap(_token, _want, _amount, _expected, _distribution, 0);
             _after = IERC20(_want).balanceOf(address(this));
             if (_after > _before) {
                 _amount = _after.sub(_before);

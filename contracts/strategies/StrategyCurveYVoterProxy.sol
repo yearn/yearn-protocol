@@ -12,8 +12,8 @@ import "../../interfaces/curve/Gauge.sol";
 import "../../interfaces/curve/Mintr.sol";
 import "../../interfaces/uniswap/Uni.sol";
 import "../../interfaces/curve/Curve.sol";
-import "../../interfaces/yearn/Token.sol";
-import "../../interfaces/yearn/VoterProxy.sol";
+import "../../interfaces/yearn/IToken.sol";
+import "../../interfaces/yearn/IVoterProxy.sol";
 
 contract StrategyCurveYVoterProxy {
     using SafeERC20 for IERC20;
@@ -90,7 +90,7 @@ contract StrategyCurveYVoterProxy {
         uint256 _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
             IERC20(want).safeTransfer(proxy, _want);
-            VoterProxy(proxy).deposit(gauge, want);
+            IVoterProxy(proxy).deposit(gauge, want);
         }
     }
 
@@ -136,12 +136,12 @@ contract StrategyCurveYVoterProxy {
     }
 
     function _withdrawAll() internal {
-        VoterProxy(proxy).withdrawAll(gauge, want);
+        IVoterProxy(proxy).withdrawAll(gauge, want);
     }
 
     function harvest() public {
         require(msg.sender == strategist || msg.sender == governance, "!authorized");
-        VoterProxy(proxy).harvest(gauge);
+        IVoterProxy(proxy).harvest(gauge);
         uint256 _crv = IERC20(crv).balanceOf(address(this));
         if (_crv > 0) {
             uint256 _keepCRV = _crv.mul(keepCRV).div(keepCRVMax);
@@ -176,13 +176,13 @@ contract StrategyCurveYVoterProxy {
             IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
             deposit();
         }
-        VoterProxy(proxy).lock();
+        IVoterProxy(proxy).lock();
         earned = earned.add(_want);
         emit Harvested(_want, earned);
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
-        return VoterProxy(proxy).withdraw(gauge, want, _amount);
+        return IVoterProxy(proxy).withdraw(gauge, want, _amount);
     }
 
     function balanceOfWant() public view returns (uint256) {
@@ -190,7 +190,7 @@ contract StrategyCurveYVoterProxy {
     }
 
     function balanceOfPool() public view returns (uint256) {
-        return VoterProxy(proxy).balanceOf(gauge);
+        return IVoterProxy(proxy).balanceOf(gauge);
     }
 
     function balanceOf() public view returns (uint256) {

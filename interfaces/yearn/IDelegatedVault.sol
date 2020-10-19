@@ -1,6 +1,6 @@
 pragma solidity ^0.5.17;
 
-interface DelegatedVault {
+interface IDelegatedVault {
     function token() external view returns (address);
 
     function deposit(uint256) external;

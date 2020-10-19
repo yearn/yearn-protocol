@@ -2,7 +2,7 @@
 
 pragma solidity ^0.5.17;
 
-interface Governance {
+interface IGovernance {
     function withdraw(uint256) external;
 
     function getReward() external;

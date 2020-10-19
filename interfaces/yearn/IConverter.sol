@@ -2,6 +2,6 @@
 
 pragma solidity ^0.5.17;
 
-interface Converter {
+interface IConverter {
     function convert(address) external returns (uint256);
 }

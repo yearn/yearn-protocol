@@ -2,7 +2,7 @@
 
 pragma solidity ^0.5.17;
 
-interface Proxy {
+interface IProxy {
     function execute(
         address to,
         uint256 value,
