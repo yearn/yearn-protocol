@@ -12,7 +12,7 @@ import "../../interfaces/curve/Gauge.sol";
 import "../../interfaces/curve/Mintr.sol";
 import "../../interfaces/curve/VoteEscrow.sol";
 import "../../interfaces/uniswap/Uni.sol";
-import "../../interfaces/yearn/Token.sol";
+import "../../interfaces/yearn/IToken.sol";
 
 contract CurveYCRVVoter {
     using SafeERC20 for IERC20;

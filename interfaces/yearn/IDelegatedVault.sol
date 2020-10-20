@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: MIT
-
 pragma solidity ^0.5.17;
 
-interface Vault {
+interface IDelegatedVault {
+    function token() external view returns (address);
+
     function deposit(uint256) external;
 
     function depositAll() external;
@@ -12,4 +12,6 @@ interface Vault {
     function withdrawAll() external;
 
     function getPricePerFullShare() external view returns (uint256);
+
+    function claimInsurance() external;
 }

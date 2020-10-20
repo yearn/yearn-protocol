@@ -9,8 +9,8 @@ import "../../interfaces/maker/Maker.sol";
 import "../../interfaces/uniswap/Uni.sol";
 
 import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/yearn/Strategy.sol";
-import "../../interfaces/yearn/Vault.sol";
+import "../../interfaces/yearn/IStrategy.sol";
+import "../../interfaces/yearn/IVault.sol";
 
 contract StrategyMKRVaultDAIDelegate {
     using SafeERC20 for IERC20;
@@ -143,7 +143,7 @@ contract StrategyMKRVaultDAIDelegate {
             _lockWETHAndDrawDAI(_token, _draw);
         }
         // approve yVaultDAI use DAI
-        Vault(yVaultDAI).depositAll();
+        IVault(yVaultDAI).depositAll();
     }
 
     function _getPrice() internal view returns (uint256 p) {
@@ -265,7 +265,7 @@ contract StrategyMKRVaultDAIDelegate {
     }
 
     function _withdrawAll() internal {
-        Vault(yVaultDAI).withdrawAll(); // get Dai
+        IVault(yVaultDAI).withdrawAll(); // get Dai
         _wipe(getTotalDebtAmount().add(1)); // in case of edge case
         _freeWETH(balanceOfmVault());
     }
@@ -336,7 +336,7 @@ contract StrategyMKRVaultDAIDelegate {
         uint256 _drawD = drawAmount();
         if (_drawD > 0) {
             _lockWETHAndDrawDAI(0, _drawD);
-            Vault(yVaultDAI).depositAll();
+            IVault(yVaultDAI).depositAll();
         }
     }
 
@@ -405,24 +405,24 @@ contract StrategyMKRVaultDAIDelegate {
     }
 
     function getUnderlyingDai() public view returns (uint256) {
-        return IERC20(yVaultDAI).balanceOf(address(this)).mul(Vault(yVaultDAI).getPricePerFullShare()).div(1e18);
+        return IERC20(yVaultDAI).balanceOf(address(this)).mul(IVault(yVaultDAI).getPricePerFullShare()).div(1e18);
     }
 
     function _withdrawDaiMost(uint256 _amount) internal returns (uint256) {
-        uint256 _shares = _amount.mul(1e18).div(Vault(yVaultDAI).getPricePerFullShare());
+        uint256 _shares = _amount.mul(1e18).div(IVault(yVaultDAI).getPricePerFullShare());
 
         if (_shares > IERC20(yVaultDAI).balanceOf(address(this))) {
             _shares = IERC20(yVaultDAI).balanceOf(address(this));
         }
 
         uint256 _before = IERC20(dai).balanceOf(address(this));
-        Vault(yVaultDAI).withdraw(_shares);
+        IVault(yVaultDAI).withdraw(_shares);
         uint256 _after = IERC20(dai).balanceOf(address(this));
         return _after.sub(_before);
     }
 
     function _withdrawDaiLeast(uint256 _amount) internal returns (uint256) {
-        uint256 _shares = _amount.mul(1e18).div(Vault(yVaultDAI).getPricePerFullShare()).mul(withdrawalMax).div(
+        uint256 _shares = _amount.mul(1e18).div(IVault(yVaultDAI).getPricePerFullShare()).mul(withdrawalMax).div(
             withdrawalMax.sub(withdrawalFee)
         );
 
@@ -431,7 +431,7 @@ contract StrategyMKRVaultDAIDelegate {
         }
 
         uint256 _before = IERC20(dai).balanceOf(address(this));
-        Vault(yVaultDAI).withdraw(_shares);
+        IVault(yVaultDAI).withdraw(_shares);
         uint256 _after = IERC20(dai).balanceOf(address(this));
         return _after.sub(_before);
     }

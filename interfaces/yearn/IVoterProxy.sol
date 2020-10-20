@@ -2,7 +2,7 @@
 
 pragma solidity ^0.5.17;
 
-interface VoterProxy {
+interface IVoterProxy {
     function withdraw(
         address _gauge,
         address _token,

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.5.17;
 
-interface OneSplitAudit {
+interface IOneSplitAudit {
     function swap(
         address fromToken,
         address destToken,

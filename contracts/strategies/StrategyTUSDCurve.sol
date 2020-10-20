@@ -12,7 +12,7 @@ import "../../interfaces/uniswap/Uni.sol";
 import "../../interfaces/curve/Mintr.sol";
 
 import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/yearn/Token.sol";
+import "../../interfaces/yearn/IToken.sol";
 
 contract StrategyTUSDCurve {
     using SafeERC20 for IERC20;

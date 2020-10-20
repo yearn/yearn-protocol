@@ -8,8 +8,8 @@ import "@openzeppelinV2/contracts/utils/Address.sol";
 import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 
 import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/yearn/Governance.sol";
-import "../../interfaces/yearn/Token.sol";
+import "../../interfaces/yearn/IGovernance.sol";
+import "../../interfaces/yearn/IToken.sol";
 import "../../interfaces/uniswap/Uni.sol";
 import "../../interfaces/curve/Curve.sol";
 
@@ -69,7 +69,7 @@ contract StrategyYFIGovernance {
     function deposit() public {
         IERC20(want).safeApprove(gov, 0);
         IERC20(want).safeApprove(gov, IERC20(want).balanceOf(address(this)));
-        Governance(gov).stake(IERC20(want).balanceOf(address(this)));
+        IGovernance(gov).stake(IERC20(want).balanceOf(address(this)));
     }
 
     // Controller only function for creating additional rewards from dust
@@ -109,12 +109,12 @@ contract StrategyYFIGovernance {
     }
 
     function _withdrawAll() internal {
-        Governance(gov).exit();
+        IGovernance(gov).exit();
     }
 
     function harvest() public {
         require(msg.sender == strategist || msg.sender == governance || msg.sender == tx.origin, "!authorized");
-        Governance(gov).getReward();
+        IGovernance(gov).getReward();
         uint256 _balance = IERC20(reward).balanceOf(address(this));
         if (_balance > 0) {
             IERC20(reward).safeApprove(zap, 0);
@@ -139,7 +139,7 @@ contract StrategyYFIGovernance {
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
-        Governance(gov).withdraw(_amount);
+        IGovernance(gov).withdraw(_amount);
         return _amount;
     }
 
@@ -148,7 +148,7 @@ contract StrategyYFIGovernance {
     }
 
     function balanceOfYGov() public view returns (uint256) {
-        return Governance(gov).balanceOf(address(this));
+        return IGovernance(gov).balanceOf(address(this));
     }
 
     function balanceOf() public view returns (uint256) {
@@ -157,12 +157,12 @@ contract StrategyYFIGovernance {
 
     function voteFor(uint256 _proposal) external {
         require(msg.sender == governance, "!governance");
-        Governance(gov).voteFor(_proposal);
+        IGovernance(gov).voteFor(_proposal);
     }
 
     function voteAgainst(uint256 _proposal) external {
         require(msg.sender == governance, "!governance");
-        Governance(gov).voteAgainst(_proposal);
+        IGovernance(gov).voteAgainst(_proposal);
     }
 
     function setGovernance(address _governance) external {
