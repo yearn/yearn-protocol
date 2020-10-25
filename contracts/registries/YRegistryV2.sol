@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.5.17;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelinV2/contracts/math/SafeMath.sol";
 import "@openzeppelinV2/contracts/utils/Address.sol";
@@ -11,7 +12,7 @@ import "../../interfaces/yearn/IStrategy.sol";
 import "../../interfaces/yearn/IVault.sol";
 import "../../interfaces/yearn/IWrappedVault.sol";
 
-contract YRegistry {
+contract YRegistryV2 {
     using Address for address;
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -21,6 +22,15 @@ contract YRegistry {
 
     EnumerableSet.AddressSet private vaults;
     EnumerableSet.AddressSet private controllers;
+
+    struct VaultInfo {
+        address vault;
+        address controller;
+        address token;
+        address strategy;
+        bool isWrapped;
+        bool isDelegated;
+    }
 
     mapping(address => address) private wrappedVaults;
 
@@ -32,15 +42,15 @@ contract YRegistry {
     }
 
     function getName() external pure returns (string memory) {
-        return "YRegistry";
+        return "YRegistryV2";
     }
 
     function addVault(address _vault) public onlyGovernance {
         setVault(_vault);
 
-        (address controller, , , , ) = getVaultData(_vault);
+        VaultInfo memory _vaultInfo = getVaultData(_vault);
 
-        setController(controller);
+        setController(_vaultInfo.controller);
     }
 
     function addWrappedVault(address _vault) public onlyGovernance {
@@ -48,10 +58,10 @@ contract YRegistry {
         address wrappedVault = IWrappedVault(_vault).vault();
         setWrappedVault(_vault, wrappedVault);
 
-        (address controller, , , , ) = getVaultData(_vault);
+        VaultInfo memory _vaultInfo = getVaultData(_vault);
 
         // Adds to controllers array
-        setController(controller);
+        setController(_vaultInfo.controller);
         // TODO Add and track tokens and strategies? [historical]
         // (current ones can be obtained via getVaults + getVaultInfo)
     }
@@ -60,10 +70,10 @@ contract YRegistry {
         setVault(_vault);
         setDelegatedVault(_vault);
 
-        (address controller, , , , ) = getVaultData(_vault);
+        VaultInfo memory _vaultInfo = getVaultData(_vault);
 
         // Adds to controllers array
-        setController(controller);
+        setController(_vaultInfo.controller);
         // TODO Add and track tokens and strategies? [historical]
         // (current ones can be obtained via getVaults + getVaultInfo)
     }
@@ -93,32 +103,24 @@ contract YRegistry {
         }
     }
 
-    function getVaultData(address _vault)
-        internal
-        view
-        returns (
-            address controller,
-            address token,
-            address strategy,
-            bool isWrapped,
-            bool isDelegated
-        )
-    {
+    function getVaultData(address _vault) internal view returns (VaultInfo memory vaultInfo) {
         address vault = _vault;
-        isWrapped = wrappedVaults[_vault] != address(0);
+        bool isWrapped = wrappedVaults[_vault] != address(0);
         if (isWrapped) {
             vault = wrappedVaults[_vault];
         }
-        isDelegated = isDelegatedVault[vault];
+        bool isDelegated = isDelegatedVault[vault];
 
         // Get values from controller
-        controller = IVault(vault).controller();
+        address token = address(0);
+        address controller = IVault(vault).controller();
         if (isWrapped && IVault(vault).underlying() != address(0)) {
             token = IVault(_vault).token(); // Use non-wrapped vault
         } else {
             token = IVault(vault).token();
         }
 
+        address strategy = address(0);
         if (isDelegated) {
             strategy = IController(controller).strategies(vault);
         } else {
@@ -143,7 +145,7 @@ contract YRegistry {
             require(token == strategyToken, "Strategy token address does not match"); // Might happen?
         }
 
-        return (controller, token, strategy, isWrapped, isDelegated);
+        return VaultInfo(vault, controller, token, strategy, isWrapped, isDelegated);
     }
 
     // Vaults getters
@@ -163,45 +165,15 @@ contract YRegistry {
         return vaultsArray;
     }
 
-    function getVaultInfo(address _vault)
-        external
-        view
-        returns (
-            address controller,
-            address token,
-            address strategy,
-            bool isWrapped,
-            bool isDelegated
-        )
-    {
-        (controller, token, strategy, isWrapped, isDelegated) = getVaultData(_vault);
-        return (controller, token, strategy, isWrapped, isDelegated);
+    function getVaultInfo(address _vault) external view returns (VaultInfo memory vaultInfo) {
+        return getVaultData(_vault);
     }
 
-    function getVaultsInfo()
-        external
-        view
-        returns (
-            address[] memory controllerArray,
-            address[] memory tokenArray,
-            address[] memory strategyArray,
-            bool[] memory isWrappedArray,
-            bool[] memory isDelegatedArray
-        )
-    {
-        controllerArray = new address[](vaults.length());
-        tokenArray = new address[](vaults.length());
-        strategyArray = new address[](vaults.length());
-        isWrappedArray = new bool[](vaults.length());
-        isDelegatedArray = new bool[](vaults.length());
+    function getVaultsInfo() external view returns (VaultInfo[] memory vaultInfos) {
+        vaultInfos = new VaultInfo[](vaults.length());
 
         for (uint256 i = 0; i < vaults.length(); i++) {
-            (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = getVaultData(vaults.get(i));
-            controllerArray[i] = _controller;
-            tokenArray[i] = _token;
-            strategyArray[i] = _strategy;
-            isWrappedArray[i] = _isWrapped;
-            isDelegatedArray[i] = _isDelegated;
+            vaultInfos[i] = getVaultData(vaults.get(i));
         }
     }
 

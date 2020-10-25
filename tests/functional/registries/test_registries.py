@@ -5,7 +5,7 @@ from brownie import (
     yVault,
     yWETH,
     yDelegatedVault,
-    YRegistry,
+    YRegistryV2,
     StrategyCreamYFI,
     StrategyMKRVaultDAIDelegate,
     Controller,
@@ -13,8 +13,8 @@ from brownie import (
 
 
 def test_registry_deployment(gov):
-    registry = gov.deploy(YRegistry, gov)
-    assert registry.getName() == "YRegistry"
+    registry = gov.deploy(YRegistryV2, gov)
+    assert registry.getName() == "YRegistryV2"
     assert registry.governance() == gov
 
 
@@ -22,7 +22,7 @@ def test_registry_add_vault(accounts, gov, rewards):
     token = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
     controller = gov.deploy(Controller, rewards)
     vault = gov.deploy(yVault, token, controller)
-    registry = gov.deploy(YRegistry, gov)
+    registry = gov.deploy(YRegistryV2, gov)
     strategy = gov.deploy(StrategyCreamYFI, controller)
 
     controller.setVault(token, vault, {"from": gov})
@@ -49,7 +49,7 @@ def test_registry_add_delegated_vault(accounts, gov, rewards):
     token = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
     controller = gov.deploy(Controller, rewards)
     vault = gov.deploy(yDelegatedVault, token, controller)
-    registry = gov.deploy(YRegistry, gov)
+    registry = gov.deploy(YRegistryV2, gov)
     strategy = gov.deploy(StrategyMKRVaultDAIDelegate, controller)
 
     controller.setVault(strategy, vault, {"from": gov})
