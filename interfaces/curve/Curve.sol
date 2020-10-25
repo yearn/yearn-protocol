@@ -36,3 +36,8 @@ interface Zap {
         uint256
     ) external;
 }
+
+interface ICurveDeposit {
+    function add_liquidity(uint[4] calldata, uint) external;
+    function remove_liquidity_one_coin(uint, int128, uint) external;
+}
