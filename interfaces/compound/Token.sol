@@ -64,14 +64,14 @@ interface cToken {
      * @notice Returns the current total borrows plus accrued interest
      * @return The total borrows with interest
      */
-    function totalBorrowsCurrent() external nonReentrant returns (uint256);
+    function totalBorrowsCurrent() external returns (uint256);
 
     /**
      * @notice Accrue interest to updated borrowIndex and then calculate account's borrow balance using the updated borrowIndex
      * @param account The address whose balance should be calculated after updating borrowIndex
      * @return The calculated balance
      */
-    function borrowBalanceCurrent(address account) external nonReentrant returns (uint256);
+    function borrowBalanceCurrent(address account) external returns (uint256);
 
     /**
      * @notice Return the borrow balance of account based on stored data
