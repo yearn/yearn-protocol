@@ -212,7 +212,6 @@ library SafeMath {
     }
 }
 
-
 interface StrategyProxy {
     function lock() external;
 }
