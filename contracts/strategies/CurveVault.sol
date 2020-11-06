@@ -1,5 +1,5 @@
 /**
- *Submitted for verification at Etherscan.io on 2020-11-04
+ *Submitted for verification at Etherscan.io on 2020-11-05
 */
 
 // SPDX-License-Identifier: MIT
@@ -272,14 +272,14 @@ interface FeeDistribution {
     function claim(address) external;
 }
 
-contract CurveVault {
+contract veCurveVault {
     using SafeMath for uint;
 
     /// @notice EIP-20 token name for this token
-    string public constant name = "CRV-DAO yVault";
+    string public constant name = "veCRV-DAO yVault";
 
     /// @notice EIP-20 token symbol for this token
-    string public constant symbol = "yvCRV-DAO";
+    string public constant symbol = "yveCRV-DAO";
 
     /// @notice EIP-20 token decimals for this token
     uint8 public constant decimals = 18;
@@ -480,7 +480,7 @@ contract CurveVault {
             _claim();
             uint256 _bal = rewards.balanceOf(address(this));
             if (_bal > bal) {
-                uint256 _diff = _bal.sub(bal, "CRV::_update: bal _diff");
+                uint256 _diff = _bal.sub(bal, "veCRV::_update: bal _diff");
                 if (_diff > 0) {
                     uint256 _ratio = _diff.mul(1e18).div(totalSupply);
                     if (_ratio > 0) {
@@ -498,13 +498,13 @@ contract CurveVault {
         }
     }
     
-    function _updateFor(address recipient) public {
+    function updateFor(address recipient) public {
         _update();
         uint256 _supplied = balances[recipient];
         if (_supplied > 0) {
             uint256 _supplyIndex = supplyIndex[recipient];
             supplyIndex[recipient] = index;
-            uint256 _delta = index.sub(_supplyIndex, "CRV::_claimFor: index delta");
+            uint256 _delta = index.sub(_supplyIndex, "veCRV::_claimFor: index delta");
             if (_delta > 0) {
               uint256 _share = _supplied.mul(_delta).div(1e18);
               claimable[recipient] = claimable[recipient].add(_share);
@@ -524,7 +524,7 @@ contract CurveVault {
     }
     
     function _claimFor(address recipient) internal {
-        _updateFor(recipient);
+        updateFor(recipient);
         rewards.transfer(recipient, claimable[recipient]);
         claimable[recipient] = 0;
         bal = rewards.balanceOf(address(this));
@@ -537,7 +537,7 @@ contract CurveVault {
     }
 
     function _mint(address dst, uint amount) internal {
-        _updateFor(dst);
+        updateFor(dst);
         // mint the amount
         totalSupply = totalSupply.add(amount);
         // transfer the amount to the recipient
@@ -607,7 +607,7 @@ contract CurveVault {
      * @param amount The number of tokens that are approved (2^256-1 means infinite)
      * @return Whether or not the approval succeeded
      */
-    function approve(address spender, uint amount) public returns (bool) {
+    function approve(address spender, uint amount) external returns (bool) {
         allowances[msg.sender][spender] = amount;
 
         emit Approval(msg.sender, spender, amount);
@@ -652,7 +652,7 @@ contract CurveVault {
      * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transfer(address dst, uint amount) public returns (bool) {
+    function transfer(address dst, uint amount) external returns (bool) {
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -683,8 +683,8 @@ contract CurveVault {
         require(src != address(0), "_transferTokens: zero address");
         require(dst != address(0), "_transferTokens: zero address");
         
-        _updateFor(src);
-        _updateFor(dst);
+        updateFor(src);
+        updateFor(dst);
 
         balances[src] = balances[src].sub(amount, "_transferTokens: exceeds balance");
         balances[dst] = balances[dst].add(amount, "_transferTokens: overflows");
