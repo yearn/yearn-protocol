@@ -3,7 +3,7 @@
 */
 
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.12;
+pragma solidity ^0.5.17;
 
 // From https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/Math.sol
 // Subject to the MIT license.
@@ -301,7 +301,9 @@ contract veCurveVault {
 
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint chainId,address verifyingContract)");
-    bytes32 public immutable DOMAINSEPARATOR;
+    // NOTE: deployed code uses 0.6.12 with immutable,changing here for compatibility
+    //  -> bytes32 public immutable DOMAINSEPARATOR;
+    bytes32 public DOMAINSEPARATOR;
 
     /// @notice The EIP-712 typehash for the delegation struct used by the contract
     bytes32 public constant DELEGATION_TYPEHASH = keccak256("Delegation(address delegatee,uint nonce,uint expiry)");
