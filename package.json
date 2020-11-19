@@ -6,7 +6,7 @@
         "ethlint": "^1.2.5",
         "husky": "^4.3.0",
         "prettier": "^2.1.2",
-        "prettier-plugin-solidity": "^1.0.0-alpha.57",
+        "prettier-plugin-solidity": "^1.0.0-beta.1",
         "pretty-quick": "^3.0.2"
     },
     "scripts": {
