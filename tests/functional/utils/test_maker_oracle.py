@@ -15,6 +15,7 @@ def test_maker_oracle(MakerOracle, accounts, interface, name):
     deployer, reader = accounts[:2]
     oracle = MakerOracle.deploy(source, {"from": deployer})
     oracle.set_user(reader, True)
+    assert oracle.users(reader)
     for func in [oracle.peek, oracle.peep]:
         with brownie.reverts("not user"):
             func()
@@ -23,5 +24,6 @@ def test_maker_oracle(MakerOracle, accounts, interface, name):
     source.kiss(oracle, {"from": osm_mom})
     for func in [oracle.peek, oracle.peep]:
         val, has = func({"from": reader})
+        print(val.to('ether'), has)
         assert val > 0
         assert has
