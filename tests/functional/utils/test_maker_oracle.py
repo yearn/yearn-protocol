@@ -24,6 +24,16 @@ def test_maker_oracle(MakerOracle, accounts, interface, name):
     source.kiss(oracle, {"from": osm_mom})
     for func in [oracle.peek, oracle.peep]:
         val, has = func({"from": reader})
-        print(val.to('ether'), has)
+        print(val.to("ether"), has)
         assert val > 0
         assert has
+
+
+def test_maker_oracle_auth(MakerOracle, accounts):
+    deployer, owner, rando = accounts[:3]
+    oracle = MakerOracle.deploy(oracles["YFI/USD"], {"from": deployer})
+    assert oracle.owner() == deployer
+    oracle.set_owner(owner)
+    assert oracle.owner() == owner
+    with brownie.reverts():
+        oracle.set_owner(rando, {"from": rando})
