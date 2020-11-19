@@ -32,12 +32,14 @@ def set_user(user: address, allowed: bool):
 @view
 @external
 def peek() -> (uint256, bool):
-    assert self.users[msg.sender]
+    assert self.users[msg.sender], "not user"
+    assert self.oracle.bud(self), "not bud"
     return self.oracle.peek()
 
 
 @view
 @external
 def peep() -> (uint256, bool):
-    assert self.users[msg.sender]
+    assert self.users[msg.sender], "not user"
+    assert self.oracle.bud(self), "not bud"
     return self.oracle.peep()
