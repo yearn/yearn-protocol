@@ -1,20 +1,27 @@
+import pytest
 import brownie
 
+oracles = {
+    "BTC/USD": "0xf185d0682d50819263941e5f4EacC763CC5C6C42",
+    "ETH/USD": "0x81FE72B5A8d1A857d176C3E7d5Bd2679A9B85763",
+    "YFI/USD": "0x5F122465bCf86F45922036970Be6DD7F58820214",
+}
 
-def test_yfi_oracle(MakerOracle, accounts, Contract):
+
+@pytest.mark.parametrize("name", oracles)
+def test_maker_oracle(MakerOracle, accounts, interface, name):
     osm_mom = accounts.at("0x76416A4d5190d071bfed309861527431304aA14f", force=True)
-    yfi_usd_osm = Contract("0x5F122465bCf86F45922036970Be6DD7F58820214")
+    source = interface.OracleSecurityModule(oracles[name])
     deployer, reader = accounts[:2]
-    oracle = MakerOracle.deploy(yfi_usd_osm, {"from": deployer})
+    oracle = MakerOracle.deploy(source, {"from": deployer})
     oracle.set_user(reader, True)
-    brk_a = 345_592
     for func in [oracle.peek, oracle.peep]:
         with brownie.reverts("not user"):
             func()
         with brownie.reverts("not bud"):
             func({"from": reader})
-    yfi_usd_osm.kiss["address"](oracle, {"from": osm_mom})
+    source.kiss(oracle, {"from": osm_mom})
     for func in [oracle.peek, oracle.peep]:
         val, has = func({"from": reader})
-        assert val.to("ether") > brk_a
+        assert val > 0
         assert has
