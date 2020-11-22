@@ -354,12 +354,12 @@ contract StrategyTUSDypool {
     }
 
     function setThreshold(uint256 _threshold) external {
-        require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance, "!ksg");
+        require(msg.sender == strategist || msg.sender == governance, "!ksg");
         threshold = _threshold;
     }
 
     function setSlip(uint256 _slip) external {
-        require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance, "!ksg");
+        require(msg.sender == strategist || msg.sender == governance, "!ksg");
         slip = _slip;
     }
 }
