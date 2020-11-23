@@ -69,13 +69,7 @@ contract StrategyTUSDypool {
     event Threshold(address indexed strategy);
 
     modifier isAuthorized() {
-        require(
-            msg.sender == governance ||
-                msg.sender == strategist ||
-                msg.sender == controller ||
-                msg.sender == address(this),
-            "!authorized"
-        );
+        require(msg.sender == governance || msg.sender == strategist || msg.sender == controller || msg.sender == address(this), "!authorized");
         _;
     }
 
