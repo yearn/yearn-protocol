@@ -56,7 +56,6 @@ contract StrategyTUSDypool {
     address public governance;
     address public controller;
     address public strategist;
-    address public keeper;
 
     uint256 public constant DENOMINATOR = 10000;
     uint256 public treasuryFee = 500;
@@ -73,7 +72,6 @@ contract StrategyTUSDypool {
         require(
             msg.sender == governance ||
                 msg.sender == strategist ||
-                msg.sender == keeper ||
                 msg.sender == controller ||
                 msg.sender == address(this),
             "!authorized"
@@ -84,7 +82,6 @@ contract StrategyTUSDypool {
     constructor(address _controller) public {
         governance = msg.sender;
         strategist = msg.sender;
-        keeper = msg.sender;
         controller = _controller;
     }
 
@@ -331,11 +328,6 @@ contract StrategyTUSDypool {
     function setStrategist(address _strategist) external {
         require(msg.sender == governance || msg.sender == strategist, "!gs");
         strategist = _strategist;
-    }
-
-    function setKeeper(address _keeper) external {
-        require(msg.sender == governance || msg.sender == strategist, "!gs");
-        keeper = _keeper;
     }
 
     function setWithdrawalFee(uint256 _withdrawalFee) external {
