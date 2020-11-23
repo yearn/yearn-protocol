@@ -27,6 +27,14 @@ interface ICurveFi {
         uint256 _from_amount,
         uint256 _min_to_amount
     ) external;
+
+    function balances(int128) external view returns (uint256);
+
+    function get_dy(
+        int128 from,
+        int128 to,
+        uint256 _from_amount
+    ) external view returns (uint256);
 }
 
 interface Zap {
