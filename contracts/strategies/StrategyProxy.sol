@@ -9,6 +9,7 @@ import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 
 import "../../interfaces/yearn/IProxy.sol";
 import "../../interfaces/curve/Mintr.sol";
+import "../../interfaces/curve/FeeDistribution.sol";
 
 contract StrategyProxy {
     using SafeERC20 for IERC20;
@@ -20,6 +21,9 @@ contract StrategyProxy {
     address public constant crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
     address public constant gauge = address(0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB);
     address public constant y = address(0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1);
+    address public constant yveCRV = address(0xc5bDdf9843308380375a611c18B50Fb9341f502A);
+    address public constant CRV3 = address(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
+    FeeDistribution public constant feeDistribution = FeeDistribution(0xA464e6DCda8AC41e03616F95f4BC98a13b8922Dc);
 
     mapping(address => bool) public strategies;
     address public governance;
@@ -95,5 +99,13 @@ contract StrategyProxy {
         uint256 _after = IERC20(crv).balanceOf(address(proxy));
         uint256 _balance = _after.sub(_before);
         proxy.execute(crv, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
+    }
+
+    function claim(address recipient) external {
+        require(msg.sender == yveCRV, "!strategy");
+        uint256 amount = feeDistribution.claim(address(proxy));
+        if (amount > 0) {
+            proxy.execute(CRV3, 0, abi.encodeWithSignature("transfer(address,uint256)", recipient, amount));
+        }
     }
 }
