@@ -21,6 +21,12 @@ interface ICurveFi {
 
     function remove_liquidity(uint256 _amount, uint256[4] calldata amounts) external;
 
+    function remove_liquidity_one_coin(
+        uint256 _token_amount,
+        int128 i,
+        uint256 min_amount
+    ) external;
+
     function exchange(
         int128 from,
         int128 to,
