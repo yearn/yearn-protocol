@@ -9,8 +9,6 @@ interface IController {
 
     function earn(address, uint256) external;
 
-    function want(address) external view returns (address);
-
     function rewards() external view returns (address);
 
     function vaults(address) external view returns (address);
