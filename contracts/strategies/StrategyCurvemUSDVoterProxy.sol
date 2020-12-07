@@ -26,6 +26,8 @@ contract StrategyCurvemUSDVoterProxy {
     address public constant gauge = address(0x5f626c30EC1215f4EdCc9982265E8b1F411D1352);
     address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
 
+    address public constant uniswap = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address public constant sushiswap = address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
     address public constant dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
     address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> dai route
 
@@ -54,7 +56,7 @@ contract StrategyCurvemUSDVoterProxy {
         controller = _controller;
         // standardize constructor
         proxy = address(0xC17ADf949f524213a540609c386035D7D685B16F);
-        dex = address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
+        dex = sushiswap;
     }
 
     function getName() external pure returns (string memory) {
@@ -98,11 +100,10 @@ contract StrategyCurvemUSDVoterProxy {
 
     function switchDex(bool isUniswap) external {
         require(msg.sender == strategist || msg.sender == governance, "!authorized");
-        // save gas and storage
         if (isUniswap) {
-            dex = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+            dex = uniswap;
         } else {
-            dex = address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
+            dex = sushiswap;
         }
     }
 
