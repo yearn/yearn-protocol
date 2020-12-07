@@ -41,6 +41,7 @@ contract StrategyCurveGUSDVoterProxy {
     address public governance;
     address public controller;
     address public strategist;
+    address public keeper;
 
     uint256 public earned; // lifetime strategy earnings denominated in `want` token
 
@@ -49,6 +50,7 @@ contract StrategyCurveGUSDVoterProxy {
     constructor(address _controller) public {
         governance = msg.sender;
         strategist = msg.sender;
+        keeper = msg.sender;
         controller = _controller;
         // standardize constructor
         proxy = address(0xC17ADf949f524213a540609c386035D7D685B16F);
@@ -62,6 +64,11 @@ contract StrategyCurveGUSDVoterProxy {
     function setStrategist(address _strategist) external {
         require(msg.sender == strategist || msg.sender == governance, "!authorized");
         strategist = _strategist;
+    }
+
+    function setKeeper(address _keeper) external {
+        require(msg.sender == strategist || msg.sender == governance, "!authorized");
+        keeper = _keeper;
     }
 
     function setKeepCRV(uint256 _keepCRV) external {
@@ -155,7 +162,7 @@ contract StrategyCurveGUSDVoterProxy {
     }
 
     function harvest() public {
-        require(msg.sender == strategist || msg.sender == governance, "!authorized");
+        require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance, "!keepers");
         IVoterProxy(proxy).harvest(gauge);
         uint256 _crv = IERC20(crv).balanceOf(address(this));
         if (_crv > 0) {
