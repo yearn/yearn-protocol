@@ -94,7 +94,6 @@ contract YRegistry {
     }
 
     function removeVault(address _vault) public onlyGovernance {
-        require(vaults.contains(_vault), "Vault does not exists");
         vaults.remove(_vault);
     }
 
