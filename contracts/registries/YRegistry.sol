@@ -93,6 +93,10 @@ contract YRegistry {
         }
     }
 
+    function removeVault(address _vault) public onlyGovernance {
+        vaults.remove(_vault);
+    }
+
     function getVaultData(address _vault)
         internal
         view
@@ -182,6 +186,7 @@ contract YRegistry {
         external
         view
         returns (
+            address[] memory vaultsAddresses,
             address[] memory controllerArray,
             address[] memory tokenArray,
             address[] memory strategyArray,
@@ -189,6 +194,7 @@ contract YRegistry {
             bool[] memory isDelegatedArray
         )
     {
+        vaultsAddresses = new address[](vaults.length());
         controllerArray = new address[](vaults.length());
         tokenArray = new address[](vaults.length());
         strategyArray = new address[](vaults.length());
@@ -196,6 +202,7 @@ contract YRegistry {
         isDelegatedArray = new bool[](vaults.length());
 
         for (uint256 i = 0; i < vaults.length(); i++) {
+            vaultsAddresses[i] = vaults.get(i);
             (address _controller, address _token, address _strategy, bool _isWrapped, bool _isDelegated) = getVaultData(vaults.get(i));
             controllerArray[i] = _controller;
             tokenArray[i] = _token;
