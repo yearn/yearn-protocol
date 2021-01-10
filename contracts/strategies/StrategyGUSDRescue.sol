@@ -38,6 +38,10 @@ contract StrategyGUSDRescue {
         IERC20(want).transfer(governance, _want);
     }
 
+	function withdrawAll() public returns (uint256) {
+		return 0;
+	}
+
     function balanceOf() public pure returns (uint256) {
         return 0;
     }
