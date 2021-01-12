@@ -110,8 +110,6 @@ contract StrategyCurveEURVoterProxy {
         require(msg.sender == controller, "!controller");
         require(want != address(_asset), "want");
         require(crv != address(_asset), "crv");
-        require(weth != address(_asset), "weth");
-        require(usdc != address(_asset), "usdc");
         require(eurs != address(_asset), "eurs");
         balance = _asset.balanceOf(address(this));
         _asset.safeTransfer(controller, balance);
