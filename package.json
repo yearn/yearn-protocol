@@ -12,11 +12,12 @@
     "scripts": {
         "lint": "pretty-quick --pattern '**/*.*(sol|json|md)' --verbose",
         "lint:check": "prettier --check **/*.sol **/*.json **/*.md",
-        "lint:fix": "pretty-quick --pattern '**/*.*(sol|json|md)' --staged --verbose"
+        "lint:fix": "pretty-quick --pattern '**/*.*(sol|json|md)' --verbose",
+        "lint:fix-staged": "pretty-quick --pattern '**/*.*(sol|json|md)' --staged --verbose"
     },
     "husky": {
         "hooks": {
-            "pre-commit": "yarn lint:fix",
+            "pre-commit": "yarn lint:fix-staged",
             "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
         }
     }
