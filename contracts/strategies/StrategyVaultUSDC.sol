@@ -49,10 +49,8 @@ contract StrategyVaultUSDC {
     }
 
     function debt() external view returns (uint256) {
-        (, uint256 currentBorrowBalance, , , , , , , , ) = Aave(getAave()).getUserReserveData(
-            want,
-            IController(controller).vaults(address(this))
-        );
+        (, uint256 currentBorrowBalance, , , , , , , , ) =
+            Aave(getAave()).getUserReserveData(want, IController(controller).vaults(address(this)));
         return currentBorrowBalance;
     }
 
@@ -62,10 +60,8 @@ contract StrategyVaultUSDC {
     }
 
     function skimmable() public view returns (uint256) {
-        (, uint256 currentBorrowBalance, , , , , , , , ) = Aave(getAave()).getUserReserveData(
-            want,
-            IController(controller).vaults(address(this))
-        );
+        (, uint256 currentBorrowBalance, , , , , , , , ) =
+            Aave(getAave()).getUserReserveData(want, IController(controller).vaults(address(this)));
         uint256 _have = have();
         if (_have > currentBorrowBalance) {
             return _have.sub(currentBorrowBalance);
