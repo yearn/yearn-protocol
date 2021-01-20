@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.5.16;
+pragma solidity ^0.5.17;
 
-interface OneSplitAudit {
+interface IOneSplitAudit {
     function swap(
         address fromToken,
         address destToken,
@@ -10,10 +10,7 @@ interface OneSplitAudit {
         uint256 minReturn,
         uint256[] calldata distribution,
         uint256 flags
-    )
-        external
-        payable
-        returns(uint256 returnAmount);
+    ) external payable returns (uint256 returnAmount);
 
     function getExpectedReturn(
         address fromToken,
@@ -21,11 +18,5 @@ interface OneSplitAudit {
         uint256 amount,
         uint256 parts,
         uint256 flags // See constants in IOneSplit.sol
-    )
-        external
-        view
-        returns(
-            uint256 returnAmount,
-            uint256[] memory distribution
-        );
+    ) external view returns (uint256 returnAmount, uint256[] memory distribution);
 }

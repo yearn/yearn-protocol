@@ -1,67 +1,88 @@
 name: Test
 
-on: [push]
+on:
+  push:
+    branches:
+    - master
+    - develop
+  pull_request:
+    branches:
+    - master
+    - develop
 
 env:
-  ETHERSCAN_TOKEN:  ${{ secrets.ETHERSCAN_TOKEN }}
-  WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
+  ETHERSCAN_TOKEN:  6776WKCX4XHV7C6NQBTIME6XKM2YNBK29V
+  WEB3_INFURA_PROJECT_ID: 164b1027c8254bf69a309a9ae0b81342
 
 jobs:
 
-  lint:
+  brownie:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
 
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
+    strategy:
+      fail-fast: false
+      matrix:
+        type: [functional]
+
+    steps:
+    - name: Check out github repository
+      uses: actions/checkout@v2
       with:
-        python-version: 3.8
+        fetch-depth: 1
 
-    - name: Install black
-      run: pip install -r requirements-dev.txt
-
-    - name: Run Black
-      run: black .
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
     - name: Check ETHERSCAN_TOKEN
       run: |
         if [ -z "$ETHERSCAN_TOKEN" ] ; then
           echo "Missing ENV variable ETHERSCAN_TOKEN"
           exit 1
         fi
+
     - name: Check WEB3_INFURA_PROJECT_ID
       run: |
         if [ -z "$WEB3_INFURA_PROJECT_ID" ] ; then
           echo "Missing ENV variable WEB3_INFURA_PROJECT_ID"
           exit 1
         fi
-    - uses: actions/checkout@v1
 
-    - name: Cache Compiler Installations
+    - name: Cache compiler installations
       uses: actions/cache@v2
       with:
         path: |
           ~/.solcx
           ~/.vvm
-        key: compiler-cache
+        key: ${{ runner.os }}-compiler-cache
 
-    - name: Setup Node.js
+    - name: Setup node.js
       uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
 
-    - name: Install Ganache
-      run: npm install -g ganache-cli@6.10.1
+    - name: Install ganache
+      run: npm install -g ganache-cli@6.11
 
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v1
+    - name: Set up python 3.8
+      uses: actions/setup-python@v2
       with:
         python-version: 3.8
 
-    - name: Install Brownie
+    - name: Set pip cache directory path
+      id: pip-cache-dir-path
+      run: |
+        echo "::set-output name=dir::$(pip cache dir)"
+
+    - name: Restore pip cache
+      uses: actions/cache@v2
+      id: pip-cache
+      with:
+        path: |
+          ${{ steps.pip-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+          ${{ runner.os }}-pip-
+
+    - name: Install python dependencies
       run: pip install -r requirements-dev.txt
 
-    - name: Run Tests
-      run: brownie test -s
+    - name: Run tests
+      run: brownie test tests/${{ matrix.type }}/ -s --coverage

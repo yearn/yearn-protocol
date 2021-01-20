@@ -1,8 +1,10 @@
-pragma solidity ^0.5.16;
+pragma solidity ^0.5.17;
 
 interface WETH {
     function deposit() external payable;
-    function withdraw(uint wad) external;
-    event Deposit(address indexed dst, uint wad);
-    event Withdrawal(address indexed src, uint wad);
+
+    function withdraw(uint256 wad) external;
+
+    event Deposit(address indexed dst, uint256 wad);
+    event Withdrawal(address indexed src, uint256 wad);
 }
