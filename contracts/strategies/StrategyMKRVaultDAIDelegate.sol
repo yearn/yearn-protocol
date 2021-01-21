@@ -25,7 +25,6 @@ import "../../interfaces/yearn/IVault.sol";
  Where possible, strategies must remain as immutable as possible, instead of updating variables, we update the contract by linking it in the controller
 
 */
-
 contract StrategyMKRVaultDAIDelegate {
     using SafeERC20 for IERC20;
     using Address for address;
@@ -444,8 +443,9 @@ contract StrategyMKRVaultDAIDelegate {
     }
 
     function _withdrawDaiLeast(uint256 _amount) internal returns (uint256) {
-        uint256 _shares =
-            _amount.mul(1e18).div(IVault(yVaultDAI).getPricePerFullShare()).mul(c_base).div(c_base.sub(getUnderlyingWithdrawalFee()));
+        uint256 _shares = _amount.mul(1e18).div(IVault(yVaultDAI).getPricePerFullShare()).mul(c_base).div(
+            c_base.sub(getUnderlyingWithdrawalFee())
+        );
 
         if (_shares > IERC20(yVaultDAI).balanceOf(address(this))) {
             _shares = IERC20(yVaultDAI).balanceOf(address(this));
