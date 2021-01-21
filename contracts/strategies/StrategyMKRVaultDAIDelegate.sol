@@ -1,385 +1,16 @@
 pragma solidity ^0.5.17;
 
-interface IERC20 {
-    function totalSupply() external view returns (uint256);
-
-    function balanceOf(address account) external view returns (uint256);
-
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    function decimals() external view returns (uint256);
-
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-library SafeMath {
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
-
-        return c;
-    }
-
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return sub(a, b, "SafeMath: subtraction overflow");
-    }
-
-    function sub(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-
-        return c;
-    }
-
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return div(a, b, "SafeMath: division by zero");
-    }
-
-    function div(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0, errorMessage);
-        uint256 c = a / b;
-
-        return c;
-    }
-
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return mod(a, b, "SafeMath: modulo by zero");
-    }
-
-    function mod(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b != 0, errorMessage);
-        return a % b;
-    }
-}
-
-library Address {
-    function isContract(address account) internal view returns (bool) {
-        bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            codehash := extcodehash(account)
-        }
-        return (codehash != 0x0 && codehash != accountHash);
-    }
-
-    function toPayable(address account) internal pure returns (address payable) {
-        return address(uint160(account));
-    }
-
-    function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
-
-        // solhint-disable-next-line avoid-call-value
-        (bool success, ) = recipient.call.value(amount)("");
-        require(success, "Address: unable to send value, recipient may have reverted");
-    }
-}
-
-library SafeERC20 {
-    using SafeMath for uint256;
-    using Address for address;
-
-    function safeTransfer(
-        IERC20 token,
-        address to,
-        uint256 value
-    ) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
-    }
-
-    function safeTransferFrom(
-        IERC20 token,
-        address from,
-        address to,
-        uint256 value
-    ) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
-    }
-
-    function safeApprove(
-        IERC20 token,
-        address spender,
-        uint256 value
-    ) internal {
-        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeERC20: approve from non-zero to non-zero allowance");
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
-    }
-
-    function callOptionalReturn(IERC20 token, bytes memory data) private {
-        require(address(token).isContract(), "SafeERC20: call to non-contract");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = address(token).call(data);
-        require(success, "SafeERC20: low-level call failed");
-
-        if (returndata.length > 0) {
-            // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
-        }
-    }
-}
-
-interface yVault {
-    function getPricePerFullShare() external view returns (uint256);
-
-    function balanceOf(address) external view returns (uint256);
-
-    function depositAll() external;
-
-    function withdraw(uint256 _shares) external;
-
-    function withdrawAll() external;
-
-    function setMin(uint256) external;
-
-    function earn() external;
-
-    function min() external returns (uint256);
-}
-
-interface Controller {
-    function vaults(address) external view returns (address);
-
-    function strategies(address) external view returns (address);
-
-    function rewards() external view returns (address);
-
-    function approveStrategy(address, address) external;
-
-    function setStrategy(address, address) external;
-}
-
-interface Strategy {
-    function withdrawalFee() external view returns (uint256);
-}
-
-/* MakerDao interfaces */
-
-interface GemLike {
-    function approve(address, uint256) external;
-
-    function transfer(address, uint256) external;
-
-    function transferFrom(
-        address,
-        address,
-        uint256
-    ) external;
-
-    function deposit() external payable;
-
-    function withdraw(uint256) external;
-}
-
-interface ManagerLike {
-    function cdpCan(
-        address,
-        uint256,
-        address
-    ) external view returns (uint256);
-
-    function ilks(uint256) external view returns (bytes32);
-
-    function owns(uint256) external view returns (address);
-
-    function urns(uint256) external view returns (address);
-
-    function vat() external view returns (address);
-
-    function open(bytes32, address) external returns (uint256);
-
-    function give(uint256, address) external;
-
-    function cdpAllow(
-        uint256,
-        address,
-        uint256
-    ) external;
-
-    function urnAllow(address, uint256) external;
-
-    function frob(
-        uint256,
-        int256,
-        int256
-    ) external;
-
-    function flux(
-        uint256,
-        address,
-        uint256
-    ) external;
-
-    function move(
-        uint256,
-        address,
-        uint256
-    ) external;
-
-    function exit(
-        address,
-        uint256,
-        address,
-        uint256
-    ) external;
-
-    function quit(uint256, address) external;
-
-    function enter(address, uint256) external;
-
-    function shift(uint256, uint256) external;
-}
-
-interface VatLike {
-    function can(address, address) external view returns (uint256);
-
-    function ilks(bytes32)
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        );
-
-    function dai(address) external view returns (uint256);
-
-    function urns(bytes32, address) external view returns (uint256, uint256);
-
-    function frob(
-        bytes32,
-        address,
-        address,
-        address,
-        int256,
-        int256
-    ) external;
-
-    function hope(address) external;
-
-    function move(
-        address,
-        address,
-        uint256
-    ) external;
-}
-
-interface GemJoinLike {
-    function dec() external returns (uint256);
-
-    function gem() external returns (GemLike);
-
-    function join(address, uint256) external payable;
-
-    function exit(address, uint256) external;
-}
-
-interface GNTJoinLike {
-    function bags(address) external view returns (address);
-
-    function make(address) external returns (address);
-}
-
-interface DaiJoinLike {
-    function vat() external returns (VatLike);
-
-    function dai() external returns (GemLike);
-
-    function join(address, uint256) external payable;
-
-    function exit(address, uint256) external;
-}
-
-interface HopeLike {
-    function hope(address) external;
-
-    function nope(address) external;
-}
-
-interface EndLike {
-    function fix(bytes32) external view returns (uint256);
-
-    function cash(bytes32, uint256) external;
-
-    function free(bytes32) external;
-
-    function pack(uint256) external;
-
-    function skim(bytes32, address) external;
-}
-
-interface JugLike {
-    function drip(bytes32) external returns (uint256);
-}
-
-interface PotLike {
-    function pie(address) external view returns (uint256);
-
-    function drip() external returns (uint256);
-
-    function join(uint256) external;
-
-    function exit(uint256) external;
-}
-
-interface SpotLike {
-    function ilks(bytes32) external view returns (address, uint256);
-}
-
-interface OSMedianizer {
-    function read() external view returns (uint256, bool);
-
-    function foresight() external view returns (uint256, bool);
-}
-
-interface Uni {
-    function swapExactTokensForTokens(
-        uint256,
-        uint256,
-        address[] calldata,
-        address,
-        uint256
-    ) external;
-}
+import "@openzeppelinV2/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelinV2/contracts/math/SafeMath.sol";
+import "@openzeppelinV2/contracts/utils/Address.sol";
+import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
+
+import "../../interfaces/maker/Maker.sol";
+import "../../interfaces/uniswap/Uni.sol";
+
+import "../../interfaces/yearn/IController.sol";
+import "../../interfaces/yearn/IStrategy.sol";
+import "../../interfaces/yearn/IVault.sol";
 
 /*
 
@@ -540,7 +171,7 @@ contract StrategyMKRVaultDAIDelegate {
             _lockWETHAndDrawDAI(_token, _draw);
 
             // approve yVaultDAI use DAI
-            yVault(yVaultDAI).depositAll();
+            IVault(yVaultDAI).depositAll();
         }
     }
 
@@ -608,8 +239,8 @@ contract StrategyMKRVaultDAIDelegate {
 
         uint256 _fee = _amount.mul(withdrawalFee).div(c_base);
 
-        IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
-        address _vault = Controller(controller).vaults(address(want));
+        IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
+        address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
 
         IERC20(want).safeTransfer(_vault, _amount.sub(_fee));
@@ -655,13 +286,13 @@ contract StrategyMKRVaultDAIDelegate {
         _swap(IERC20(dai).balanceOf(address(this)));
         balance = IERC20(want).balanceOf(address(this));
 
-        address _vault = Controller(controller).vaults(address(want));
+        address _vault = IController(controller).vaults(address(want));
         require(_vault != address(0), "!vault"); // additional protection so we don't burn the funds
         IERC20(want).safeTransfer(_vault, balance);
     }
 
     function _withdrawAll() internal {
-        yVault(yVaultDAI).withdrawAll(); // get Dai
+        IVault(yVaultDAI).withdrawAll(); // get Dai
         _freeWETHandWipeDAI(balanceOfmVault(), getTotalDebtAmount().add(1)); // in case of edge case
     }
 
@@ -696,7 +327,7 @@ contract StrategyMKRVaultDAIDelegate {
             uint256 _fee = _want.mul(performanceFee).div(c_base);
             uint256 _strategistReward = _want.mul(strategistReward).div(c_base);
             IERC20(want).safeTransfer(strategist, _strategistReward);
-            IERC20(want).safeTransfer(Controller(controller).rewards(), _fee);
+            IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
         }
 
         deposit();
@@ -725,7 +356,7 @@ contract StrategyMKRVaultDAIDelegate {
         uint256 _drawD = drawAmount();
         if (_drawD > 0) {
             _lockWETHAndDrawDAI(0, _drawD);
-            yVault(yVaultDAI).depositAll();
+            IVault(yVaultDAI).depositAll();
         }
     }
 
@@ -791,38 +422,37 @@ contract StrategyMKRVaultDAIDelegate {
     }
 
     function getUnderlyingWithdrawalFee() public view returns (uint256) {
-        address _strategy = Controller(controller).strategies(dai);
-        return Strategy(_strategy).withdrawalFee();
+        address _strategy = IController(controller).strategies(dai);
+        return IStrategy(_strategy).withdrawalFee();
     }
 
     function getUnderlyingDai() public view returns (uint256) {
-        return IERC20(yVaultDAI).balanceOf(address(this)).mul(yVault(yVaultDAI).getPricePerFullShare()).div(1e18);
+        return IERC20(yVaultDAI).balanceOf(address(this)).mul(IVault(yVaultDAI).getPricePerFullShare()).div(1e18);
     }
 
     function _withdrawDaiMost(uint256 _amount) internal returns (uint256) {
-        uint256 _shares = _amount.mul(1e18).div(yVault(yVaultDAI).getPricePerFullShare());
+        uint256 _shares = _amount.mul(1e18).div(IVault(yVaultDAI).getPricePerFullShare());
 
         if (_shares > IERC20(yVaultDAI).balanceOf(address(this))) {
             _shares = IERC20(yVaultDAI).balanceOf(address(this));
         }
 
         uint256 _before = IERC20(dai).balanceOf(address(this));
-        yVault(yVaultDAI).withdraw(_shares);
+        IVault(yVaultDAI).withdraw(_shares);
         uint256 _after = IERC20(dai).balanceOf(address(this));
         return _after.sub(_before);
     }
 
     function _withdrawDaiLeast(uint256 _amount) internal returns (uint256) {
-        uint256 _shares = _amount.mul(1e18).div(yVault(yVaultDAI).getPricePerFullShare()).mul(c_base).div(
-            c_base.sub(getUnderlyingWithdrawalFee())
-        );
+        uint256 _shares =
+            _amount.mul(1e18).div(IVault(yVaultDAI).getPricePerFullShare()).mul(c_base).div(c_base.sub(getUnderlyingWithdrawalFee()));
 
         if (_shares > IERC20(yVaultDAI).balanceOf(address(this))) {
             _shares = IERC20(yVaultDAI).balanceOf(address(this));
         }
 
         uint256 _before = IERC20(dai).balanceOf(address(this));
-        yVault(yVaultDAI).withdraw(_shares);
+        IVault(yVaultDAI).withdraw(_shares);
         uint256 _after = IERC20(dai).balanceOf(address(this));
         return _after.sub(_before);
     }
