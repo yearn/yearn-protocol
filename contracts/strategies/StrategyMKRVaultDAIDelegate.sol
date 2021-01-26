@@ -12,6 +12,19 @@ import "../../interfaces/yearn/IController.sol";
 import "../../interfaces/yearn/IStrategy.sol";
 import "../../interfaces/yearn/IVault.sol";
 
+/*
+
+ A strategy must implement the following calls;
+
+ - deposit()
+ - withdraw(address) must exclude any tokens used in the yield - Controller role - withdraw should return to Controller
+ - withdraw(uint) - Controller | Vault role - withdraw should always return to vault
+ - withdrawAll() - Controller | Vault role - withdraw should always return to vault
+ - balanceOf()
+
+ Where possible, strategies must remain as immutable as possible, instead of updating variables, we update the contract by linking it in the controller
+
+*/
 contract StrategyMKRVaultDAIDelegate {
     using SafeERC20 for IERC20;
     using Address for address;
@@ -32,35 +45,33 @@ contract StrategyMKRVaultDAIDelegate {
     address public eth_price_oracle = address(0xCF63089A8aD2a9D8BD6Bb8022f3190EB7e1eD0f1);
     address public constant yVaultDAI = address(0xACd43E627e64355f1861cEC6d3a6688B31a6F952);
 
-    address public constant unirouter = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address public constant uniswap = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address public constant sushiswap = address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
 
     uint256 public c = 20000;
-    uint256 public c_safe = 30000;
+    uint256 public c_safe = 40000;
+    uint256 public buffer = 500;
     uint256 public constant c_base = 10000;
-
-    uint256 public performanceFee = 500;
-    uint256 public constant performanceMax = 10000;
-
-    uint256 public withdrawalFee = 50;
-    uint256 public constant withdrawalMax = 10000;
-
-    uint256 public strategistReward = 5000;
-    uint256 public constant strategistRewardMax = 10000;
+    uint256 public performanceFee = 450;
+    uint256 public withdrawalFee = 0;
+    uint256 public strategistReward = 50;
 
     bytes32 public constant ilk = "ETH-A";
 
     address public governance;
     address public controller;
     address public strategist;
-    address public harvester;
+    address public keeper;
+    address public dex;
 
     uint256 public cdpId;
 
     constructor(address _controller) public {
         governance = msg.sender;
         strategist = msg.sender;
-        harvester = msg.sender;
+        keeper = msg.sender;
         controller = _controller;
+        dex = uniswap;
         cdpId = ManagerLike(cdp_manager).open(ilk, address(this));
         _approveAll();
     }
@@ -74,9 +85,9 @@ contract StrategyMKRVaultDAIDelegate {
         strategist = _strategist;
     }
 
-    function setHarvester(address _harvester) external {
-        require(msg.sender == harvester || msg.sender == governance, "!allowed");
-        harvester = _harvester;
+    function setKeeper(address _keeper) external {
+        require(msg.sender == keeper || msg.sender == governance, "!allowed");
+        keeper = _keeper;
     }
 
     function setWithdrawalFee(uint256 _withdrawalFee) external {
@@ -104,6 +115,11 @@ contract StrategyMKRVaultDAIDelegate {
         c_safe = _c_safe;
     }
 
+    function setBuffer(uint256 _buffer) external {
+        require(msg.sender == governance, "!governance");
+        buffer = _buffer;
+    }
+
     function setOracle(address _oracle) external {
         require(msg.sender == governance, "!governance");
         eth_price_oracle = _oracle;
@@ -126,11 +142,22 @@ contract StrategyMKRVaultDAIDelegate {
         jug = _jug;
     }
 
+    function switchDex(bool isUniswap) external {
+        require(msg.sender == strategist || msg.sender == governance, "!authorized");
+        if (isUniswap) {
+            dex = uniswap;
+        } else {
+            dex = sushiswap;
+        }
+    }
+
     function _approveAll() internal {
         IERC20(token).approve(mcd_join_eth_a, uint256(-1));
         IERC20(dai).approve(mcd_join_dai, uint256(-1));
+        VatLike(vat).hope(mcd_join_dai);
         IERC20(dai).approve(yVaultDAI, uint256(-1));
-        IERC20(dai).approve(unirouter, uint256(-1));
+        IERC20(dai).approve(uniswap, uint256(-1));
+        IERC20(dai).approve(sushiswap, uint256(-1));
     }
 
     function deposit() public {
@@ -141,9 +168,10 @@ contract StrategyMKRVaultDAIDelegate {
             // approve adapter to use token amount
             require(_checkDebtCeiling(_draw), "debt ceiling is reached!");
             _lockWETHAndDrawDAI(_token, _draw);
+
+            // approve yVaultDAI use DAI
+            IVault(yVaultDAI).depositAll();
         }
-        // approve yVaultDAI use DAI
-        IVault(yVaultDAI).depositAll();
     }
 
     function _getPrice() internal view returns (uint256 p) {
@@ -163,15 +191,14 @@ contract StrategyMKRVaultDAIDelegate {
 
     function _lockWETHAndDrawDAI(uint256 wad, uint256 wadD) internal {
         address urn = ManagerLike(cdp_manager).urns(cdpId);
-
-        // GemJoinLike(mcd_join_eth_a).gem().approve(mcd_join_eth_a, wad);
-        GemJoinLike(mcd_join_eth_a).join(urn, wad);
+        if (wad > 0) {
+            GemJoinLike(mcd_join_eth_a).join(urn, wad);
+        }
         ManagerLike(cdp_manager).frob(cdpId, toInt(wad), _getDrawDart(urn, wadD));
         ManagerLike(cdp_manager).move(cdpId, address(this), wadD.mul(1e27));
-        if (VatLike(vat).can(address(this), address(mcd_join_dai)) == 0) {
-            VatLike(vat).hope(mcd_join_dai);
+        if (wadD > 0) {
+            DaiJoinLike(mcd_join_dai).exit(address(this), wadD);
         }
-        DaiJoinLike(mcd_join_dai).exit(address(this), wadD);
     }
 
     function _getDrawDart(address urn, uint256 wad) internal returns (int256 dart) {
@@ -209,7 +236,7 @@ contract StrategyMKRVaultDAIDelegate {
             _amount = _amount.add(_balance);
         }
 
-        uint256 _fee = _amount.mul(withdrawalFee).div(withdrawalMax);
+        uint256 _fee = _amount.mul(withdrawalFee).div(c_base);
 
         IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
         address _vault = IController(controller).vaults(address(want));
@@ -219,28 +246,27 @@ contract StrategyMKRVaultDAIDelegate {
     }
 
     function _withdrawSome(uint256 _amount) internal returns (uint256) {
+        uint256 _wipe = 0;
         if (getTotalDebtAmount() != 0 && getmVaultRatio(_amount) < c_safe.mul(1e2)) {
             uint256 p = _getPrice();
-            _wipe(_withdrawDaiLeast(_amount.mul(p).div(1e18)));
+            _wipe = _withdrawDaiLeast(_amount.mul(p).div(1e18));
         }
 
-        _freeWETH(_amount);
+        _freeWETHandWipeDAI(_amount, _wipe);
 
         return _amount;
     }
 
-    function _freeWETH(uint256 wad) internal {
-        ManagerLike(cdp_manager).frob(cdpId, -toInt(wad), 0);
-        ManagerLike(cdp_manager).flux(cdpId, address(this), wad);
-        GemJoinLike(mcd_join_eth_a).exit(address(this), wad);
-    }
-
-    function _wipe(uint256 wad) internal {
-        // wad in DAI
+    function _freeWETHandWipeDAI(uint256 wad, uint256 wadD) internal {
         address urn = ManagerLike(cdp_manager).urns(cdpId);
-
-        DaiJoinLike(mcd_join_dai).join(urn, wad);
-        ManagerLike(cdp_manager).frob(cdpId, 0, _getWipeDart(VatLike(vat).dai(urn), urn));
+        if (wadD > 0) {
+            DaiJoinLike(mcd_join_dai).join(urn, wadD);
+        }
+        ManagerLike(cdp_manager).frob(cdpId, -toInt(wad), _getWipeDart(VatLike(vat).dai(urn), urn));
+        ManagerLike(cdp_manager).flux(cdpId, address(this), wad);
+        if (wad > 0) {
+            GemJoinLike(mcd_join_eth_a).exit(address(this), wad);
+        }
     }
 
     function _getWipeDart(uint256 _dai, address urn) internal view returns (int256 dart) {
@@ -266,8 +292,7 @@ contract StrategyMKRVaultDAIDelegate {
 
     function _withdrawAll() internal {
         IVault(yVaultDAI).withdrawAll(); // get Dai
-        _wipe(getTotalDebtAmount().add(1)); // in case of edge case
-        _freeWETH(balanceOfmVault());
+        _freeWETHandWipeDAI(balanceOfmVault(), getTotalDebtAmount().add(1)); // in case of edge case
     }
 
     function balanceOf() public view returns (uint256) {
@@ -286,35 +311,30 @@ contract StrategyMKRVaultDAIDelegate {
     }
 
     function harvest() public {
-        require(msg.sender == strategist || msg.sender == harvester || msg.sender == governance, "!authorized");
+        require(msg.sender == strategist || msg.sender == keeper || msg.sender == governance, "!authorized");
 
         uint256 v = getUnderlyingDai();
         uint256 d = getTotalDebtAmount();
         require(v > d, "profit is not realized yet!");
         uint256 profit = v.sub(d);
 
-        uint256 _before = IERC20(want).balanceOf(address(this));
-        _swap(_withdrawDaiMost(profit));
-        uint256 _after = IERC20(want).balanceOf(address(this));
+        _withdrawDaiMost(profit);
+        _swap(IERC20(dai).balanceOf(address(this)));
 
-        uint256 _want = _after.sub(_before);
+        uint256 _want = IERC20(want).balanceOf(address(this));
         if (_want > 0) {
-            uint256 _fee = _want.mul(performanceFee).div(performanceMax);
-            uint256 _strategistReward = _fee.mul(strategistReward).div(strategistRewardMax);
+            uint256 _fee = _want.mul(performanceFee).div(c_base);
+            uint256 _strategistReward = _want.mul(strategistReward).div(c_base);
             IERC20(want).safeTransfer(strategist, _strategistReward);
-            IERC20(want).safeTransfer(IController(controller).rewards(), _fee.sub(_strategistReward));
+            IERC20(want).safeTransfer(IController(controller).rewards(), _fee);
         }
 
         deposit();
     }
 
     function shouldDraw() external view returns (bool) {
-        uint256 _safe = c.mul(1e2);
-        uint256 _current = getmVaultRatio(0);
-        if (_current > c_base.mul(c_safe).mul(1e2)) {
-            _current = c_base.mul(c_safe).mul(1e2);
-        }
-        return (_current > _safe);
+        // 5% buffer to avoid deposit/rebalance loops
+        return (getmVaultRatio(0) > c.mul(1e2).mul(c_base).div((c_base.sub(buffer))));
     }
 
     function drawAmount() public view returns (uint256) {
@@ -324,10 +344,9 @@ contract StrategyMKRVaultDAIDelegate {
             _current = c_base.mul(c_safe).mul(1e2);
         }
         if (_current > _safe) {
-            uint256 _eth = balanceOfmVault();
-            uint256 _diff = _current.sub(_safe);
-            uint256 _draw = _eth.mul(_diff).div(_safe).mul(c_base).mul(1e2).div(_current);
-            return _draw.mul(_getPrice()).div(1e18);
+            uint256 d = getTotalDebtAmount();
+            uint256 diff = _current.sub(_safe);
+            return d.mul(diff).div(_safe);
         }
         return 0;
     }
@@ -341,16 +360,13 @@ contract StrategyMKRVaultDAIDelegate {
     }
 
     function shouldRepay() external view returns (bool) {
-        uint256 _safe = c.mul(1e2);
-        uint256 _current = getmVaultRatio(0);
-        _current = _current.mul(105).div(100); // 5% buffer to avoid deposit/rebalance loops
-        return (_current < _safe);
+        // 5% buffer to avoid deposit/rebalance loops
+        return (getmVaultRatio(0) < c.mul(1e2).mul(c_base).div((c_base.add(buffer))));
     }
 
     function repayAmount() public view returns (uint256) {
         uint256 _safe = c.mul(1e2);
         uint256 _current = getmVaultRatio(0);
-        _current = _current.mul(105).div(100); // 5% buffer to avoid deposit/rebalance loops
         if (_current < _safe) {
             uint256 d = getTotalDebtAmount();
             uint256 diff = _safe.sub(_current);
@@ -362,13 +378,13 @@ contract StrategyMKRVaultDAIDelegate {
     function repay() external {
         uint256 free = repayAmount();
         if (free > 0) {
-            _wipe(_withdrawDaiLeast(free));
+            _freeWETHandWipeDAI(0, _withdrawDaiLeast(free));
         }
     }
 
     function forceRebalance(uint256 _amount) external {
-        require(msg.sender == governance || msg.sender == strategist || msg.sender == harvester, "!authorized");
-        _wipe(_withdrawDaiLeast(_amount));
+        require(msg.sender == governance || msg.sender == strategist || msg.sender == keeper, "!authorized");
+        _freeWETHandWipeDAI(0, _withdrawDaiLeast(_amount));
     }
 
     function getTotalDebtAmount() public view returns (uint256) {
@@ -404,6 +420,11 @@ contract StrategyMKRVaultDAIDelegate {
         return numerator.div(denominator).div(1e3);
     }
 
+    function getUnderlyingWithdrawalFee() public view returns (uint256) {
+        address _strategy = IController(controller).strategies(dai);
+        return IStrategy(_strategy).withdrawalFee();
+    }
+
     function getUnderlyingDai() public view returns (uint256) {
         return IERC20(yVaultDAI).balanceOf(address(this)).mul(IVault(yVaultDAI).getPricePerFullShare()).div(1e18);
     }
@@ -422,8 +443,8 @@ contract StrategyMKRVaultDAIDelegate {
     }
 
     function _withdrawDaiLeast(uint256 _amount) internal returns (uint256) {
-        uint256 _shares = _amount.mul(1e18).div(IVault(yVaultDAI).getPricePerFullShare()).mul(withdrawalMax).div(
-            withdrawalMax.sub(withdrawalFee)
+        uint256 _shares = _amount.mul(1e18).div(IVault(yVaultDAI).getPricePerFullShare()).mul(c_base).div(
+            c_base.sub(getUnderlyingWithdrawalFee())
         );
 
         if (_shares > IERC20(yVaultDAI).balanceOf(address(this))) {
@@ -441,8 +462,8 @@ contract StrategyMKRVaultDAIDelegate {
         path[0] = address(dai);
         path[1] = address(want);
 
-        // approve unirouter to use dai
-        Uni(unirouter).swapExactTokensForTokens(_amountIn, 0, path, address(this), now.add(1 days));
+        // approve uniswap to use dai
+        Uni(dex).swapExactTokensForTokens(_amountIn, 0, path, address(this), now.add(1 days));
     }
 
     function setGovernance(address _governance) external {
