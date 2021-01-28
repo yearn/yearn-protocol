@@ -10,6 +10,7 @@ import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 import "../../interfaces/yearn/IProxy.sol";
 import "../../interfaces/curve/Mintr.sol";
 import "../../interfaces/curve/FeeDistribution.sol";
+import "../../interfaces/curve/Gauge.sol";
 
 contract StrategyProxy {
     using SafeERC20 for IERC20;
@@ -20,12 +21,13 @@ contract StrategyProxy {
     address public constant mintr = address(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
     address public constant crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
     address public constant gauge = address(0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB);
-    address public constant y = address(0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1);
     address public constant yveCRV = address(0xc5bDdf9843308380375a611c18B50Fb9341f502A);
     address public constant CRV3 = address(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
     FeeDistribution public constant feeDistribution = FeeDistribution(0xA464e6DCda8AC41e03616F95f4BC98a13b8922Dc);
 
-    mapping(address => bool) public strategies;
+    // gauge => strategies
+    mapping(address => address) public strategies;
+    mapping(address => bool) public voters;
     address public governance;
 
     constructor() public {
@@ -37,14 +39,24 @@ contract StrategyProxy {
         governance = _governance;
     }
 
-    function approveStrategy(address _strategy) external {
+    function approveStrategy(address _gauge, address _strategy) external {
         require(msg.sender == governance, "!governance");
-        strategies[_strategy] = true;
+        strategies[_gauge] = _strategy;
     }
 
-    function revokeStrategy(address _strategy) external {
+    function revokeStrategy(address _gauge) external {
         require(msg.sender == governance, "!governance");
-        strategies[_strategy] = false;
+        strategies[_gauge] = address(0);
+    }
+
+    function approveVoter(address _voter) external {
+        require(msg.sender == governance, "!governance");
+        voters[_voter] = true;
+    }
+
+    function revokeVoter(address _voter) external {
+        require(msg.sender == governance, "!governance");
+        voters[_voter] = false;
     }
 
     function lock() external {
@@ -53,7 +65,7 @@ contract StrategyProxy {
     }
 
     function vote(address _gauge, uint256 _amount) public {
-        require(strategies[msg.sender], "!strategy");
+        require(voters[msg.sender], "!voter");
         proxy.execute(gauge, 0, abi.encodeWithSignature("vote_for_gauge_weights(address,uint256)", _gauge, _amount));
     }
 
@@ -62,13 +74,12 @@ contract StrategyProxy {
         address _token,
         uint256 _amount
     ) public returns (uint256) {
-        require(strategies[msg.sender], "!strategy");
-        uint256 _before = IERC20(_token).balanceOf(address(proxy));
+        require(strategies[_gauge] == msg.sender, "!strategy");
+        uint256 _balance = IERC20(_token).balanceOf(address(proxy));
         proxy.execute(_gauge, 0, abi.encodeWithSignature("withdraw(uint256)", _amount));
-        uint256 _after = IERC20(_token).balanceOf(address(proxy));
-        uint256 _net = _after.sub(_before);
-        proxy.execute(_token, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _net));
-        return _net;
+        _balance = IERC20(_token).balanceOf(address(proxy)).sub(_balance);
+        proxy.execute(_token, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
+        return _balance;
     }
 
     function balanceOf(address _gauge) public view returns (uint256) {
@@ -76,12 +87,12 @@ contract StrategyProxy {
     }
 
     function withdrawAll(address _gauge, address _token) external returns (uint256) {
-        require(strategies[msg.sender], "!strategy");
+        require(strategies[_gauge] == msg.sender, "!strategy");
         return withdraw(_gauge, _token, balanceOf(_gauge));
     }
 
     function deposit(address _gauge, address _token) external {
-        require(strategies[msg.sender], "!strategy");
+        require(strategies[_gauge] == msg.sender, "!strategy");
         uint256 _balance = IERC20(_token).balanceOf(address(this));
         IERC20(_token).safeTransfer(address(proxy), _balance);
         _balance = IERC20(_token).balanceOf(address(proxy));
@@ -93,11 +104,10 @@ contract StrategyProxy {
     }
 
     function harvest(address _gauge) external {
-        require(strategies[msg.sender], "!strategy");
-        uint256 _before = IERC20(crv).balanceOf(address(proxy));
+        require(strategies[_gauge] == msg.sender, "!strategy");
+        uint256 _balance = IERC20(crv).balanceOf(address(proxy));
         proxy.execute(mintr, 0, abi.encodeWithSignature("mint(address)", _gauge));
-        uint256 _after = IERC20(crv).balanceOf(address(proxy));
-        uint256 _balance = _after.sub(_before);
+        _balance = (IERC20(crv).balanceOf(address(proxy))).sub(_balance);
         proxy.execute(crv, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
     }
 
@@ -107,5 +117,11 @@ contract StrategyProxy {
         if (amount > 0) {
             proxy.execute(CRV3, 0, abi.encodeWithSignature("transfer(address,uint256)", recipient, amount));
         }
+    }
+
+    function claimRewards(address _gauge, address _token) external {
+        require(strategies[_gauge] == msg.sender, "!strategy");
+        Gauge(_gauge).claim_rewards(address(proxy));
+        proxy.execute(_token, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, IERC20(_token).balanceOf(address(proxy))));
     }
 }
