@@ -48,7 +48,7 @@ contract StrategyCurveRSVVoterProxy {
     address public constant rsr = address(0x8762db106B2c2A0bccB3A80d1Ed41273552616E8);
     address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv/rsr <> weth <> rsv route
 
-    address public oneinch = address(0x111111125434b319222CdBf8C261674aDB56F3ae);
+    address public constant oneinch = address(0x111111125434b319222CdBf8C261674aDB56F3ae);
 
     uint256 public keepCRV = 500;
     uint256 public treasuryFee = 1000;
