@@ -8,9 +8,6 @@ import "@openzeppelinV2/contracts/utils/Address.sol";
 import "@openzeppelinV2/contracts/token/ERC20/SafeERC20.sol";
 
 import "../../interfaces/yearn/IController.sol";
-import "../../interfaces/curve/Gauge.sol";
-import "../../interfaces/curve/Mintr.sol";
-import "../../interfaces/uniswap/Uni.sol";
 import "../../interfaces/curve/Curve.sol";
 
 interface IVoterProxy {
@@ -51,7 +48,7 @@ contract StrategyCurveRSVVoterProxy {
     address public constant rsr = address(0x8762db106B2c2A0bccB3A80d1Ed41273552616E8);
     address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv/rsr <> weth <> rsv route
 
-    address public constant uniswap = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address public oneinch = address(0x111111125434b319222CdBf8C261674aDB56F3ae);
 
     uint256 public keepCRV = 500;
     uint256 public treasuryFee = 1000;
@@ -78,7 +75,6 @@ contract StrategyCurveRSVVoterProxy {
         controller = _controller;
         // standardize constructor
         proxy = address(0x9a3a03C614dc467ACC3e81275468e033c98d960E);
-        dex = uniswap;
     }
 
     function getName() external pure returns (string memory) {
@@ -175,7 +171,19 @@ contract StrategyCurveRSVVoterProxy {
         IVoterProxy(proxy).withdrawAll(gauge, want);
     }
 
-    function harvest() public {
+    function swapViaOneInch(
+        address _token,
+        uint256 _amount,
+        bytes memory callData
+    ) public {
+        IERC20(_token).approve(oneinch, _amount);
+
+        // solium-disable-next-line security/no-call-value
+        (bool success, ) = address(oneinch).call(callData);
+        if (!success) revert("1Inch-swap-failed");
+    }
+
+    function harvest(bytes memory crvCallData, bytes memory rsrCallData) public {
         require(msg.sender == keeper || msg.sender == strategist || msg.sender == governance, "!keepers");
 
         // harvest CRV rewards
@@ -185,16 +193,7 @@ contract StrategyCurveRSVVoterProxy {
             uint256 _keepCRV = _crv.mul(keepCRV).div(FEE_DENOMINATOR);
             IERC20(crv).safeTransfer(voter, _keepCRV);
             _crv = _crv.sub(_keepCRV);
-
-            IERC20(crv).safeApprove(dex, 0);
-            IERC20(crv).safeApprove(dex, _crv);
-
-            address[] memory path = new address[](3);
-            path[0] = crv;
-            path[1] = weth;
-            path[2] = rsv;
-
-            Uni(dex).swapExactTokensForTokens(_crv, uint256(0), path, address(this), now.add(1800));
+            swapViaOneInch(crv, _crv, crvCallData);
         }
 
         // harvest RSR rewards
@@ -202,15 +201,7 @@ contract StrategyCurveRSVVoterProxy {
         uint256 _rsr = IERC20(rsr).balanceOf(address(this));
 
         if (_rsr > 0) {
-            IERC20(rsr).safeApprove(dex, 0);
-            IERC20(rsr).safeApprove(dex, _rsr);
-
-            address[] memory path = new address[](3);
-            path[0] = rsr;
-            path[1] = weth;
-            path[2] = rsv;
-
-            Uni(dex).swapExactTokensForTokens(_rsr, uint256(0), path, address(this), now.add(1800));
+            swapViaOneInch(rsr, _rsr, rsrCallData);
         }
 
         // deposit all RSV to the Curve pool
