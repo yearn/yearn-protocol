@@ -175,7 +175,7 @@ contract StrategyCurveRSVVoterProxy {
         address _token,
         uint256 _amount,
         bytes memory callData
-    ) public {
+    ) internal {
         IERC20(_token).approve(oneinch, _amount);
 
         // solium-disable-next-line security/no-call-value
