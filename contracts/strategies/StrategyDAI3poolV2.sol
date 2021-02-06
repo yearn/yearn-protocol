@@ -303,4 +303,9 @@ contract StrategyDAI3poolV2 {
         require(msg.sender == strategist || msg.sender == governance, "!sg");
         slip = _slip;
     }
+
+    function setMaxAmount(uint256 _maxAmount) external {
+        require(msg.sender == strategist || msg.sender == governance, "!sg");
+        maxAmount = _maxAmount;
+    }
 }
