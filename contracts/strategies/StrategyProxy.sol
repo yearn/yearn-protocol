@@ -115,13 +115,11 @@ contract StrategyProxy {
 
     function claim(address recipient) external {
         require(msg.sender == yveCRV, "!strategy");
-        if (now < lastTimeCursor) return;
+        if (now < lastTimeCursor.add(604800)) return;
 
-        while (feeDistribution.last_token_time() > feeDistribution.time_cursor_of(address(proxy))) {
-            address p = address(proxy);
-            feeDistribution.claim_many([p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p]);
-        }
-        lastTimeCursor = feeDistribution.time_cursor();
+        address p = address(proxy);
+        feeDistribution.claim_many([p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p]);
+        lastTimeCursor = feeDistribution.time_cursor_of(address(proxy));
 
         uint256 amount = IERC20(CRV3).balanceOf(address(proxy));
         if (amount > 0) {
