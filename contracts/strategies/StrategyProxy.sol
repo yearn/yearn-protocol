@@ -30,6 +30,8 @@ contract StrategyProxy {
     mapping(address => bool) public voters;
     address public governance;
 
+    uint256 lastTimeCursor;
+
     constructor() public {
         governance = msg.sender;
     }
@@ -113,7 +115,13 @@ contract StrategyProxy {
 
     function claim(address recipient) external {
         require(msg.sender == yveCRV, "!strategy");
-        uint256 amount = feeDistribution.claim(address(proxy));
+        if (now < lastTimeCursor.add(604800)) return;
+
+        address p = address(proxy);
+        feeDistribution.claim_many([p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p]);
+        lastTimeCursor = feeDistribution.time_cursor_of(address(proxy));
+
+        uint256 amount = IERC20(CRV3).balanceOf(address(proxy));
         if (amount > 0) {
             proxy.execute(CRV3, 0, abi.encodeWithSignature("transfer(address,uint256)", recipient, amount));
         }
