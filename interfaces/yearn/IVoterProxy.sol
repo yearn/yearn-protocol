@@ -18,4 +18,6 @@ interface IVoterProxy {
     function harvest(address _gauge) external;
 
     function lock() external;
+
+    function claimRewards(address _gauge, address _token) external;
 }
