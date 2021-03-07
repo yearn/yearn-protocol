@@ -26,14 +26,17 @@ contract StrategyCurveEURVoterProxy {
     address public constant gauge = address(0x90Bb609649E0451E5aD952683D64BD2d1f245840);
     address public constant voter = address(0xF147b8125d2ef93FB6965Db97D6746952a133934);
 
+    address public constant uniswap = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address public constant sushiswap = address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
     address public constant eurs = address(0xdB25f211AB05b1c97D595516F45794528a807ad8);
     address public constant usdc = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     address public constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // used for crv <> weth <> usdc <> eurs route
+    address public constant snx = address(0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F);
 
-    uint256 public keepCRV = 500;
+    uint256 public keepCRV = 1000;
     uint256 public treasuryFee = 1000;
     uint256 public strategistReward = 1000;
-    uint256 public withdrawalFee = 0;
+    uint256 public withdrawalFee = 50;
     uint256 public constant FEE_DENOMINATOR = 10000;
 
     address public proxy;
@@ -54,8 +57,8 @@ contract StrategyCurveEURVoterProxy {
         keeper = msg.sender;
         controller = _controller;
         // standardize constructor
-        proxy = address(0xC17ADf949f524213a540609c386035D7D685B16F);
-        dex = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+        proxy = address(0x9a3a03C614dc467ACC3e81275468e033c98d960E);
+        dex = sushiswap;
     }
 
     function getName() external pure returns (string memory) {
@@ -95,6 +98,15 @@ contract StrategyCurveEURVoterProxy {
     function setProxy(address _proxy) external {
         require(msg.sender == governance, "!governance");
         proxy = _proxy;
+    }
+
+    function switchDex(bool isUniswap) external {
+        require(msg.sender == strategist || msg.sender == governance, "!authorized");
+        if (isUniswap) {
+            dex = uniswap;
+        } else {
+            dex = sushiswap;
+        }
     }
 
     function deposit() public {
@@ -164,13 +176,36 @@ contract StrategyCurveEURVoterProxy {
             IERC20(crv).safeApprove(dex, 0);
             IERC20(crv).safeApprove(dex, _crv);
 
-            address[] memory path = new address[](4);
+            address[] memory path = new address[](3);
             path[0] = crv;
             path[1] = weth;
             path[2] = usdc;
-            path[3] = eurs;
 
             Uni(dex).swapExactTokensForTokens(_crv, uint256(0), path, address(this), now.add(1800));
+        }
+        IVoterProxy(proxy).claimRewards(gauge, snx);
+        uint256 _snx = IERC20(snx).balanceOf(address(this));
+        if (_snx > 0) {
+            IERC20(snx).safeApprove(dex, 0);
+            IERC20(snx).safeApprove(dex, _snx);
+
+            address[] memory path = new address[](3);
+            path[0] = snx;
+            path[1] = weth;
+            path[2] = usdc;
+
+            Uni(dex).swapExactTokensForTokens(_snx, uint256(0), path, address(this), now.add(1800));
+        }
+        uint256 _usdc = IERC20(usdc).balanceOf(address(this));
+        if (_usdc > 0) {
+            IERC20(usdc).safeApprove(uniswap, 0);
+            IERC20(usdc).safeApprove(uniswap, _snx);
+
+            address[] memory path = new address[](2);
+            path[0] = usdc;
+            path[1] = eurs;
+
+            Uni(uniswap).swapExactTokensForTokens(_usdc, uint256(0), path, address(this), now.add(1800));
         }
         uint256 _eurs = IERC20(eurs).balanceOf(address(this));
         if (_eurs > 0) {
