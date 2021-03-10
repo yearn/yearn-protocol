@@ -5,7 +5,7 @@ pragma solidity ^0.5.17;
 @notice provides the interface to fetch the LendingPoolCore address
  */
 
-contract ILendingPoolAddressesProvider {
+contract LendingPoolAddressesProvider {
     /**
      * @dev returns the address of the LendingPool proxy
      * @return the lending pool proxy address

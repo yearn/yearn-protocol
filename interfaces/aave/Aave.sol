@@ -1,8 +1,6 @@
 pragma solidity ^0.5.17;
 
 interface Aave {
-    function getRevision() internal pure returns (uint256);
-
     /**
      * @dev deposits The underlying asset into the reserve. A corresponding amount of the overlying asset (aTokens)
      * is minted.

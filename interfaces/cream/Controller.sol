@@ -2,6 +2,8 @@
 
 pragma solidity ^0.5.17;
 
+import "./CToken.sol";
+
 interface Creamtroller {
     /**
      * @notice Claim all the comp accrued by holder in all markets
@@ -29,5 +31,5 @@ interface Creamtroller {
      * @param cTokens The list of addresses of the cToken markets to be enabled
      * @return Success indicator for whether each corresponding market was entered
      */
-    function enterMarkets(address[] memory cTokens) public returns (uint256[] memory);
+    function enterMarkets(address[] calldata cTokens) external returns (uint256[] memory);
 }

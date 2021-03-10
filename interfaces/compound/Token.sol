@@ -43,12 +43,6 @@ interface cToken {
     function allowance(address owner, address spender) external view returns (uint256);
 
     /**
-     * @dev Function to simply retrieve block number
-     *  This exists mainly for inheriting test contracts to stub this result.
-     */
-    function getBlockNumber() internal view returns (uint256);
-
-    /**
      * @notice Returns the current per-block borrow interest rate for this cToken
      * @return The borrow interest rate per block, scaled by 1e18
      */
@@ -118,7 +112,7 @@ interface cToken {
 
     /**
      * @notice Get the token balance of the `owner`
-     * @param owner The address of the account to query
+     * @param _owner The address of the account to query
      * @return The number of tokens owned by `owner`
      */
     function balanceOf(address _owner) external view returns (uint256);
