@@ -17,7 +17,7 @@ library SafeProxy {
         IProxy proxy,
         address to,
         uint256 value,
-        bytes calldata data
+        bytes memory data
     ) internal {
         (bool success, ) = proxy.execute(to, value, data);
         if (!success) assert(false);
