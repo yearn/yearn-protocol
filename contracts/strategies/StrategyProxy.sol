@@ -12,10 +12,23 @@ import "../../interfaces/curve/Mintr.sol";
 import "../../interfaces/curve/FeeDistribution.sol";
 import "../../interfaces/curve/Gauge.sol";
 
+library SafeProxy {
+    function safeExecute(
+        IProxy proxy,
+        address to,
+        uint256 value,
+        bytes memory data
+    ) internal {
+        (bool success, ) = proxy.execute(to, value, data);
+        if (!success) assert(false);
+    }
+}
+
 contract StrategyProxy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
+    using SafeProxy for IProxy;
 
     IProxy public constant proxy = IProxy(0xF147b8125d2ef93FB6965Db97D6746952a133934);
     address public constant mintr = address(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
@@ -68,7 +81,7 @@ contract StrategyProxy {
 
     function vote(address _gauge, uint256 _amount) public {
         require(voters[msg.sender], "!voter");
-        proxy.execute(gauge, 0, abi.encodeWithSignature("vote_for_gauge_weights(address,uint256)", _gauge, _amount));
+        proxy.safeExecute(gauge, 0, abi.encodeWithSignature("vote_for_gauge_weights(address,uint256)", _gauge, _amount));
     }
 
     function withdraw(
@@ -78,9 +91,9 @@ contract StrategyProxy {
     ) public returns (uint256) {
         require(strategies[_gauge] == msg.sender, "!strategy");
         uint256 _balance = IERC20(_token).balanceOf(address(proxy));
-        proxy.execute(_gauge, 0, abi.encodeWithSignature("withdraw(uint256)", _amount));
+        proxy.safeExecute(_gauge, 0, abi.encodeWithSignature("withdraw(uint256)", _amount));
         _balance = IERC20(_token).balanceOf(address(proxy)).sub(_balance);
-        proxy.execute(_token, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
+        proxy.safeExecute(_token, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
         return _balance;
     }
 
@@ -99,18 +112,17 @@ contract StrategyProxy {
         IERC20(_token).safeTransfer(address(proxy), _balance);
         _balance = IERC20(_token).balanceOf(address(proxy));
 
-        proxy.execute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, 0));
-        proxy.execute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, _balance));
-        (bool success, ) = proxy.execute(_gauge, 0, abi.encodeWithSignature("deposit(uint256)", _balance));
-        if (!success) assert(false);
+        proxy.safeExecute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, 0));
+        proxy.safeExecute(_token, 0, abi.encodeWithSignature("approve(address,uint256)", _gauge, _balance));
+        proxy.safeExecute(_gauge, 0, abi.encodeWithSignature("deposit(uint256)", _balance));
     }
 
     function harvest(address _gauge) external {
         require(strategies[_gauge] == msg.sender, "!strategy");
         uint256 _balance = IERC20(crv).balanceOf(address(proxy));
-        proxy.execute(mintr, 0, abi.encodeWithSignature("mint(address)", _gauge));
+        proxy.safeExecute(mintr, 0, abi.encodeWithSignature("mint(address)", _gauge));
         _balance = (IERC20(crv).balanceOf(address(proxy))).sub(_balance);
-        proxy.execute(crv, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
+        proxy.safeExecute(crv, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, _balance));
     }
 
     function claim(address recipient) external {
@@ -123,13 +135,13 @@ contract StrategyProxy {
 
         uint256 amount = IERC20(CRV3).balanceOf(address(proxy));
         if (amount > 0) {
-            proxy.execute(CRV3, 0, abi.encodeWithSignature("transfer(address,uint256)", recipient, amount));
+            proxy.safeExecute(CRV3, 0, abi.encodeWithSignature("transfer(address,uint256)", recipient, amount));
         }
     }
 
     function claimRewards(address _gauge, address _token) external {
         require(strategies[_gauge] == msg.sender, "!strategy");
         Gauge(_gauge).claim_rewards(address(proxy));
-        proxy.execute(_token, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, IERC20(_token).balanceOf(address(proxy))));
+        proxy.safeExecute(_token, 0, abi.encodeWithSignature("transfer(address,uint256)", msg.sender, IERC20(_token).balanceOf(address(proxy))));
     }
 }
