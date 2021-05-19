@@ -217,16 +217,13 @@ contract YRegistry {
         pendingGovernance = _pendingGovernance;
     }
 
-    function acceptGovernance() external onlyPendingGovernance {
-        governance = msg.sender;
+    function acceptGovernance() external {
+        require(msg.sender == pendingGovernance, "Only pendingGovernance can call this function.");
+        governance = pendingGovernance;
     }
 
     modifier onlyGovernance {
         require(msg.sender == governance, "Only governance can call this function.");
-        _;
-    }
-    modifier onlyPendingGovernance {
-        require(msg.sender == pendingGovernance, "Only pendingGovernance can call this function.");
         _;
     }
 }
