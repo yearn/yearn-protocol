@@ -20,5 +20,8 @@
             "pre-commit": "yarn lint:fix-staged",
             "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
         }
+    },
+    "peerDependencies": {
+        "solium": "^1.0.0"
     }
 }
