@@ -6,4 +6,6 @@ interface OracleSecurityModule {
     function peep() external view returns (bytes32, bool);
 
     function bud(address) external view returns (uint256);
+
+    function kiss(address a) external;
 }
